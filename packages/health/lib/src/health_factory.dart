@@ -257,11 +257,7 @@ class HealthFactory {
     }
 
     if (deduplicates) {
-      const int threshold = 100;
-      if (dataPoints.length > threshold) {
-        dataPoints = await compute(removeDuplicates, dataPoints);
-      }
-      dataPoints = removeDuplicates(dataPoints);
+      dataPoints = await removeDuplicatesCompute(dataPoints);
     }
     return dataPoints;
   }
@@ -341,6 +337,15 @@ class HealthFactory {
     }).toList();
 
     return list;
+  }
+
+  static Future<List<HealthDataPoint>> removeDuplicatesCompute(List<HealthDataPoint> points,
+      {int threshold = 100}) async {
+    if (points.length > threshold) {
+      return await compute(removeDuplicates, points);
+    } else {
+      return removeDuplicates(points);
+    }
   }
 
   /// Given an array of [HealthDataPoint]s, this method will return the array
