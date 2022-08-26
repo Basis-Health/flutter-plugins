@@ -129,40 +129,37 @@ class WorkoutHealthValue extends HealthValue {
 
   factory WorkoutHealthValue.fromJson(json) {
     return WorkoutHealthValue(
-        HealthWorkoutActivityType.values.firstWhere(
-            (element) => element.typeToString() == json['workoutActivityType']),
+        HealthWorkoutActivityType.fromTypeString(json['workoutActivityType']),
         json['totalEnergyBurned'] != null
-            ? (json['totalEnergyBurned'] as double).toInt()
+            ? (json['totalEnergyBurned'] as num).toInt()
             : null,
         json['totalEnergyBurnedUnit'] != null
-            ? HealthDataUnit.values.firstWhere((element) =>
-                element.typeToString() == json['totalEnergyBurnedUnit'])
+            ? HealthDataUnit.fromTypeString(json['totalEnergyBurnedUnit'])
             : null,
         json['totalDistance'] != null
-            ? (json['totalDistance'] as double).toInt()
+            ? (json['totalDistance'] as num).toInt()
             : null,
         json['totalDistanceUnit'] != null
-            ? HealthDataUnit.values.firstWhere((element) =>
-                element.typeToString() == json['totalDistanceUnit'])
+            ? HealthDataUnit.fromTypeString(json['totalDistanceUnit'])
             : null);
   }
 
   @override
   Map<String, dynamic> toJson() => {
-        'workoutActivityType': _workoutActivityType.toString(),
+        'workoutActivityType': _workoutActivityType.typeToString(),
         'totalEnergyBurned': _totalEnergyBurned,
-        'totalEnergyBurnedUnit': _totalEnergyBurnedUnit?.toString(),
+        'totalEnergyBurnedUnit': _totalEnergyBurnedUnit?.typeToString(),
         'totalDistance': _totalDistance,
-        'totalDistanceUnit': _totalDistanceUnit?.toString(),
+        'totalDistanceUnit': _totalDistanceUnit?.typeToString(),
       };
 
   @override
   String toString() {
-    return """workoutActivityType: ${workoutActivityType.toString()},
+    return """workoutActivityType: ${workoutActivityType.typeToString()},
     totalEnergyBurned: $totalEnergyBurned,
-    totalEnergyBurnedUnit: ${totalEnergyBurnedUnit?.toString()},
+    totalEnergyBurnedUnit: ${totalEnergyBurnedUnit?.typeToString()},
     totalDistance: $totalDistance,
-    totalDistanceUnit: ${totalDistanceUnit?.toString()}""";
+    totalDistanceUnit: ${totalDistanceUnit?.typeToString()}""";
   }
 
   @override

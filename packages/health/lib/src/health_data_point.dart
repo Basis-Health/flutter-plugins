@@ -37,7 +37,7 @@ class HealthDataPoint {
 
   /// Converts a json object to the [HealthDataPoint]
   factory HealthDataPoint.fromJson(json) {
-    var dataType = json['data_type'];
+    var dataType = HealthDataType.fromTypeString(json['data_type']);
     HealthValue value;
     if (dataType == HealthDataType.AUDIOGRAM) {
       value = AudiogramHealthValue.fromJson(json['value']);
@@ -49,7 +49,7 @@ class HealthDataPoint {
 
     return HealthDataPoint(
         value,
-        HealthDataType.fromTypeString(json['data_type']),
+        dataType,
         HealthDataUnit.fromTypeString(json['unit']),
         DateTime.parse(json['date_from']),
         DateTime.parse(json['date_to']),
