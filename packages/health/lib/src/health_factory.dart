@@ -481,7 +481,7 @@ class HealthFactory {
   /// Check if the given [HealthWorkoutActivityType] is supported on the iOS platform
   bool _isOnIOS(HealthWorkoutActivityType type) {
     // Returns true if the type is part of the iOS set
-    return {
+    return const {
       HealthWorkoutActivityType.ARCHERY,
       HealthWorkoutActivityType.BADMINTON,
       HealthWorkoutActivityType.BASEBALL,
@@ -566,7 +566,7 @@ class HealthFactory {
   /// Check if the given [HealthWorkoutActivityType] is supported on the Android platform
   bool _isOnAndroid(HealthWorkoutActivityType type) {
     // Returns true if the type is part of the Android set
-    return {
+    return const {
       HealthWorkoutActivityType.ARCHERY,
       HealthWorkoutActivityType.BADMINTON,
       HealthWorkoutActivityType.BASEBALL,
