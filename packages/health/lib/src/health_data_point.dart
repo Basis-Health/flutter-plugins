@@ -1,6 +1,5 @@
 part of health;
 
-
 /// A [HealthDataPoint] object corresponds to a data point capture from
 /// GoogleFit or Apple HealthKit with a [HealthValue] as value.
 class HealthDataPoint {
@@ -41,13 +40,13 @@ class HealthDataPoint {
     var dataType = json['data_type'];
     HealthValue value;
     if (dataType == HealthDataType.AUDIOGRAM) {
-      value = AudiogramHealthValue.fromJson(json);
+      value = AudiogramHealthValue.fromJson(json['value']);
     } else if (dataType == HealthDataType.WORKOUT) {
-      value = WorkoutHealthValue.fromJson(json);
+      value = WorkoutHealthValue.fromJson(json['value']);
     } else {
-      value = NumericHealthValue(json['value']);
+      value = NumericHealthValue.fromJson(json['value']);
     }
-  
+
     return HealthDataPoint(
         value,
         HealthDataType.fromTypeString(json['data_type']),
