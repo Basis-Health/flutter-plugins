@@ -1,5 +1,18 @@
 part of health;
 
+/// Extracts the string value from an enum
+String _enumToString(enumItem) => enumItem.toString().split('.').last;
+
+late final Map<String, HealthWorkoutActivityType> _healthWorkoutActivityTypeReverse = Map.fromEntries(
+  HealthWorkoutActivityType.values.map((e) => MapEntry(e.typeToString(), e)),
+);
+late final Map<String, HealthDataType> _healthDataTypeReverse = Map.fromEntries(
+  HealthDataType.values.map((e) => MapEntry(e.typeToString(), e)),
+);
+late final Map<String, HealthDataUnit> _healthDataUnitReverse = Map.fromEntries(
+  HealthDataUnit.values.map((e) => MapEntry(e.typeToString(), e)),
+);
+
 /// List of all available data types.
 enum HealthDataType {
   ACTIVE_ENERGY_BURNED,
@@ -46,7 +59,13 @@ enum HealthDataType {
   HIGH_HEART_RATE_EVENT,
   LOW_HEART_RATE_EVENT,
   IRREGULAR_HEART_RATE_EVENT,
-  ELECTRODERMAL_ACTIVITY,
+  ELECTRODERMAL_ACTIVITY;
+
+  /// Returns the string representation of the enum
+  /// e.g. [HealthDataType.BLOOD_GLUCOSE] -> 'BLOOD_GLUCOSE'
+  String typeToString() => _enumToString(this);
+
+  static HealthDataType fromTypeString(String v) => _healthDataTypeReverse[v]!;
 }
 
 enum HealthDataAccess {
@@ -176,7 +195,11 @@ const Map<HealthDataType, HealthDataUnit> _dataTypeToUnit = {
 
 const PlatformTypeJsonValue = {
   PlatformType.IOS: 'ios',
-  PlatformType.ANDROID: 'android'
+  PlatformType.ANDROID: 'android',
+};
+const platformTypeJsonValueReverse = {
+  'ios': PlatformType.IOS,
+  'android': PlatformType.ANDROID,
 };
 
 /// List of all [HealthDataUnit]s.
@@ -256,7 +279,13 @@ enum HealthDataUnit {
   BEATS_PER_MINUTE,
   MILLIGRAM_PER_DECILITER,
   UNKNOWN_UNIT,
-  NO_UNIT,
+  NO_UNIT;
+
+  /// Returns the string representation of the enum
+  /// e.g. [HealthDataUnit.LITER] -> 'LITER'
+  String typeToString() => _enumToString(this);
+
+  static HealthDataUnit fromTypeString(String type) => _healthDataUnitReverse[type]!;
 }
 
 /// List of [HealthWorkoutActivityType]s.
@@ -404,5 +433,11 @@ enum HealthWorkoutActivityType {
   ZUMBA,
 
   //
-  OTHER,
+  OTHER;
+
+  /// Returns the string representation of the enum
+  /// e.g. [HealthWorkoutActivityType.CYCLING] -> 'CYCLING'
+  String typeToString() => _enumToString(this);
+
+  static HealthWorkoutActivityType fromTypeString(String type) => _healthWorkoutActivityTypeReverse[type]!;
 }

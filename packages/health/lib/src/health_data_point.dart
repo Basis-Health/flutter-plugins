@@ -1,5 +1,6 @@
 part of health;
 
+
 /// A [HealthDataPoint] object corresponds to a data point capture from
 /// GoogleFit or Apple HealthKit with a [HealthValue] as value.
 class HealthDataPoint {
@@ -13,16 +14,8 @@ class HealthDataPoint {
   String _sourceId;
   String _sourceName;
 
-  HealthDataPoint(
-      this._value,
-      this._type,
-      this._unit,
-      this._dateFrom,
-      this._dateTo,
-      this._platform,
-      this._deviceId,
-      this._sourceId,
-      this._sourceName) {
+  HealthDataPoint(this._value, this._type, this._unit, this._dateFrom, this._dateTo, this._platform, this._deviceId,
+      this._sourceId, this._sourceName) {
     // set the value to minutes rather than the category
     // returned by the native API
     if (type == HealthDataType.MINDFULNESS ||
@@ -45,24 +38,23 @@ class HealthDataPoint {
 
   /// Converts a json object to the [HealthDataPoint]
   factory HealthDataPoint.fromJson(json) {
-    HealthValue healthValue;
-    if (json['data_type'] == 'audiogram') {
-      healthValue = AudiogramHealthValue.fromJson(json['value']);
+    var dataType = json['data_type'];
+    HealthValue value;
+    if (dataType == HealthDataType.AUDIOGRAM) {
+      value = AudiogramHealthValue.fromJson(json);
+    } else if (dataType == HealthDataType.WORKOUT) {
+      value = WorkoutHealthValue.fromJson(json);
     } else {
-      healthValue = NumericHealthValue.fromJson(json['value']);
+      value = NumericHealthValue(json['value']);
     }
-
+  
     return HealthDataPoint(
-        healthValue,
-        HealthDataType.values.firstWhere(
-            (element) => element.typeToString() == json['data_type']),
-        HealthDataUnit.values
-            .firstWhere((element) => element.typeToString() == json['unit']),
+        value,
+        HealthDataType.fromTypeString(json['data_type']),
+        HealthDataUnit.fromTypeString(json['unit']),
         DateTime.parse(json['date_from']),
         DateTime.parse(json['date_to']),
-        PlatformTypeJsonValue.keys.toList()[PlatformTypeJsonValue.values
-            .toList()
-            .indexOf(json['platform_type'])],
+        platformTypeJsonValueReverse[json['platform_type']]!,
         json['device_id'],
         json['source_id'],
         json['source_name']);
@@ -72,7 +64,7 @@ class HealthDataPoint {
   Map<String, dynamic> toJson() => {
         'value': value.toJson(),
         'data_type': type.typeToString(),
-        'unit': type.typeToString(),
+        'unit': unit.typeToString(),
         'date_from': dateFrom.toIso8601String(),
         'date_to': dateTo.toIso8601String(),
         'platform_type': PlatformTypeJsonValue[platform],
@@ -141,6 +133,5 @@ class HealthDataPoint {
   }
 
   @override
-  int get hashCode => Object.hash(value, unit, dateFrom, dateTo, type, platform,
-      deviceId, sourceId, sourceName);
+  int get hashCode => Object.hash(value, unit, dateFrom, dateTo, type, platform, deviceId, sourceId, sourceName);
 }
