@@ -59,9 +59,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   private var MOVE_MINUTES = "MOVE_MINUTES"
   private var DISTANCE_DELTA = "DISTANCE_DELTA"
   private var WATER = "WATER"
-  private var SLEEP_ASLEEP = "SLEEP_ASLEEP"
-  private var SLEEP_AWAKE = "SLEEP_AWAKE"
-  private var SLEEP_IN_BED = "SLEEP_IN_BED"
+  private var SLEEP = "SLEEP"
   private var WORKOUT = "WORKOUT"
 
   val workoutTypeMap = mapOf(
@@ -269,9 +267,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
       MOVE_MINUTES -> DataType.TYPE_MOVE_MINUTES
       DISTANCE_DELTA -> DataType.TYPE_DISTANCE_DELTA
       WATER -> DataType.TYPE_HYDRATION
-      SLEEP_ASLEEP -> DataType.TYPE_SLEEP_SEGMENT
-      SLEEP_AWAKE -> DataType.TYPE_SLEEP_SEGMENT
-      SLEEP_IN_BED -> DataType.TYPE_SLEEP_SEGMENT
+      SLEEP -> DataType.TYPE_SLEEP_SEGMENT
       WORKOUT -> DataType.TYPE_ACTIVITY_SEGMENT
       else -> throw IllegalArgumentException("Unsupported dataType: $type")
     }
@@ -293,9 +289,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
       MOVE_MINUTES -> Field.FIELD_DURATION
       DISTANCE_DELTA -> Field.FIELD_DISTANCE
       WATER -> Field.FIELD_VOLUME
-      SLEEP_ASLEEP -> Field.FIELD_SLEEP_SEGMENT_TYPE
-      SLEEP_AWAKE -> Field.FIELD_SLEEP_SEGMENT_TYPE
-      SLEEP_IN_BED -> Field.FIELD_SLEEP_SEGMENT_TYPE
+      SLEEP -> Field.FIELD_SLEEP_SEGMENT_TYPE
       WORKOUT -> Field.FIELD_ACTIVITY
       else -> throw IllegalArgumentException("Unsupported dataType: $type")
     }
@@ -648,7 +642,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
         if (type == SLEEP_ASLEEP) {
           healthData.add(
             hashMapOf(
-              "value" to session.getEndTime(TimeUnit.MINUTES) - session.getStartTime(TimeUnit.MINUTES),
+              "value" to 1,
               "date_from" to session.getStartTime(TimeUnit.MILLISECONDS),
               "date_to" to session.getEndTime(TimeUnit.MILLISECONDS),
               "unit" to "MINUTES",
@@ -671,9 +665,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
                 ) {
                   healthData.add(
                     hashMapOf(
-                      "value" to dataPoint.getEndTime(TimeUnit.MINUTES) - dataPoint.getStartTime(
-                        TimeUnit.MINUTES
-                      ),
+                      "value" to 0,
                       "date_from" to dataPoint.getStartTime(TimeUnit.MILLISECONDS),
                       "date_to" to dataPoint.getEndTime(TimeUnit.MILLISECONDS),
                       "unit" to "MINUTES",
@@ -689,9 +681,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
           } else {
             healthData.add(
               hashMapOf(
-                "value" to session.getEndTime(TimeUnit.MINUTES) - session.getStartTime(
-                  TimeUnit.MINUTES
-                ),
+                "value" to 0,
                 "date_from" to session.getStartTime(TimeUnit.MILLISECONDS),
                 "date_to" to session.getEndTime(TimeUnit.MILLISECONDS),
                 "unit" to "MINUTES",
@@ -710,9 +700,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
               if (dataPoint.getValue(Field.FIELD_SLEEP_SEGMENT_TYPE).asInt() == 1) {
                 healthData.add(
                   hashMapOf(
-                    "value" to dataPoint.getEndTime(TimeUnit.MINUTES) - dataPoint.getStartTime(
-                      TimeUnit.MINUTES
-                    ),
+                    "value" to 2,
                     "date_from" to dataPoint.getStartTime(TimeUnit.MILLISECONDS),
                     "date_to" to dataPoint.getEndTime(TimeUnit.MILLISECONDS),
                     "unit" to "MINUTES",
