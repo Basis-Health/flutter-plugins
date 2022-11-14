@@ -59,7 +59,9 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   private var MOVE_MINUTES = "MOVE_MINUTES"
   private var DISTANCE_DELTA = "DISTANCE_DELTA"
   private var WATER = "WATER"
-  private var SLEEP = "SLEEP"
+  private var SLEEP_ASLEEP = "SLEEP_ASLEEP"
+  private var SLEEP_AWAKE = "SLEEP_AWAKE"
+  private var SLEEP_IN_BED = "SLEEP_IN_BED"
   private var WORKOUT = "WORKOUT"
 
   val workoutTypeMap = mapOf(
@@ -267,7 +269,9 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
       MOVE_MINUTES -> DataType.TYPE_MOVE_MINUTES
       DISTANCE_DELTA -> DataType.TYPE_DISTANCE_DELTA
       WATER -> DataType.TYPE_HYDRATION
-      SLEEP -> DataType.TYPE_SLEEP_SEGMENT
+      SLEEP_ASLEEP -> DataType.TYPE_SLEEP_SEGMENT
+      SLEEP_AWAKE -> DataType.TYPE_SLEEP_SEGMENT
+      SLEEP_IN_BED -> DataType.TYPE_SLEEP_SEGMENT
       WORKOUT -> DataType.TYPE_ACTIVITY_SEGMENT
       else -> throw IllegalArgumentException("Unsupported dataType: $type")
     }
@@ -289,7 +293,9 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
       MOVE_MINUTES -> Field.FIELD_DURATION
       DISTANCE_DELTA -> Field.FIELD_DISTANCE
       WATER -> Field.FIELD_VOLUME
-      SLEEP -> Field.FIELD_SLEEP_SEGMENT_TYPE
+      SLEEP_ASLEEP -> Field.FIELD_SLEEP_SEGMENT_TYPE
+      SLEEP_AWAKE -> Field.FIELD_SLEEP_SEGMENT_TYPE
+      SLEEP_IN_BED -> Field.FIELD_SLEEP_SEGMENT_TYPE
       WORKOUT -> Field.FIELD_ACTIVITY
       else -> throw IllegalArgumentException("Unsupported dataType: $type")
     }
@@ -561,12 +567,12 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
       DataType.TYPE_ACTIVITY_SEGMENT -> {
         val readRequest: SessionReadRequest
         val readRequestBuilder = SessionReadRequest.Builder()
-            .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-            .enableServerQueries()
-            .readSessionsFromAllApps()
-            .includeActivitySessions()
-            .read(dataType)
-            .read(DataType.TYPE_CALORIES_EXPENDED)
+          .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
+          .enableServerQueries()
+          .readSessionsFromAllApps()
+          .includeActivitySessions()
+          .read(dataType)
+          .read(DataType.TYPE_CALORIES_EXPENDED)
 
         // If fine location is enabled, read distance data
         if (ContextCompat.checkSelfPermission(
@@ -574,7 +580,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
             android.Manifest.permission.ACCESS_FINE_LOCATION
           ) == PackageManager.PERMISSION_GRANTED
         ) {
-          // Request permission with distance data. 
+          // Request permission with distance data.
           // Google Fit requires this when we query for distance data
           // as it is restricted data
           if (!GoogleSignIn.hasPermissions(googleSignInAccount, fitnessOptions)) {
@@ -586,7 +592,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
             )
           }
           readRequestBuilder.read(DataType.TYPE_DISTANCE_DELTA)
-        } 
+        }
         readRequest = readRequestBuilder.build()
         Fitness.getSessionsClient(activity!!.applicationContext, googleSignInAccount)
           .readSession(readRequest)
@@ -632,7 +638,6 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
     Log.i("FLUTTER_HEALTH::ERROR", exception.message ?: "unknown error")
     Log.i("FLUTTER_HEALTH::ERROR", exception.stackTrace.toString())
   }
-
   private fun sleepDataHandler(type: String, result: Result) =
     OnSuccessListener { response: SessionReadResponse ->
       val healthData: MutableList<Map<String, Any?>> = mutableListOf()
