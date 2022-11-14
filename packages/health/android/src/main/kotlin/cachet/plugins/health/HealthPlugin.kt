@@ -269,9 +269,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
       MOVE_MINUTES -> DataType.TYPE_MOVE_MINUTES
       DISTANCE_DELTA -> DataType.TYPE_DISTANCE_DELTA
       WATER -> DataType.TYPE_HYDRATION
-      SLEEP_ASLEEP -> DataType.TYPE_SLEEP_SEGMENT
-      SLEEP_AWAKE -> DataType.TYPE_SLEEP_SEGMENT
-      SLEEP_IN_BED -> DataType.TYPE_SLEEP_SEGMENT
+      SLEEP -> DataType.TYPE_SLEEP_SEGMENT
       WORKOUT -> DataType.TYPE_ACTIVITY_SEGMENT
       else -> throw IllegalArgumentException("Unsupported dataType: $type")
     }
