@@ -14,26 +14,7 @@ class HealthDataPoint {
   String _sourceName;
 
   HealthDataPoint(this._value, this._type, this._unit, this._dateFrom, this._dateTo, this._platform, this._deviceId,
-      this._sourceId, this._sourceName) {
-    // set the value to minutes rather than the category
-    // returned by the native API
-    if (type == HealthDataType.MINDFULNESS ||
-        type == HealthDataType.HEADACHE_UNSPECIFIED ||
-        type == HealthDataType.HEADACHE_NOT_PRESENT ||
-        type == HealthDataType.HEADACHE_MILD ||
-        type == HealthDataType.HEADACHE_MODERATE ||
-        type == HealthDataType.HEADACHE_SEVERE ||
-        type == HealthDataType.SLEEP_IN_BED ||
-        type == HealthDataType.SLEEP_ASLEEP ||
-        type == HealthDataType.SLEEP_AWAKE) {
-      this._value = _convertMinutes();
-    }
-  }
-
-  NumericHealthValue _convertMinutes() {
-    int ms = dateTo.millisecondsSinceEpoch - dateFrom.millisecondsSinceEpoch;
-    return NumericHealthValue(ms / (1000 * 60));
-  }
+      this._sourceId, this._sourceName);
 
   /// Converts a json object to the [HealthDataPoint]
   factory HealthDataPoint.fromJson(json) {
@@ -119,7 +100,9 @@ class HealthDataPoint {
 
   @override
   bool operator ==(Object o) {
-    return o is HealthDataPoint &&
+    return
+      identical(this, o) ||
+        o is HealthDataPoint &&
         this.value == o.value &&
         this.unit == o.unit &&
         this.dateFrom == o.dateFrom &&

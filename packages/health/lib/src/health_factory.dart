@@ -18,9 +18,17 @@ class HealthFactory {
   static PlatformType _platformType = Platform.isAndroid ? PlatformType.ANDROID : PlatformType.IOS;
 
   /// Check if a given data type is available on the platform
-  bool isDataTypeAvailable(HealthDataType dataType) => _platformType == PlatformType.ANDROID
-      ? _dataTypeKeysAndroid.contains(dataType)
-      : _dataTypeKeysIOS.contains(dataType);
+  bool isDataTypeAvailable(HealthDataType dataType) {
+    if (Platform.isAndroid) return dataTypeKeysAndroid.contains(dataType);
+    if (Platform.isIOS) return dataTypeKeysIOS.contains(dataType);
+    throw Exception('Unsupported platform ${Platform.operatingSystem}');
+  }
+
+  List<HealthDataType> getAvailableDataTypes() {
+    if (Platform.isAndroid) return dataTypeKeysAndroidList;
+    if (Platform.isIOS) return dataTypeKeysIOSList;
+    throw Exception('Unsupported platform ${Platform.operatingSystem}');
+  }
 
   /// Determines if the data types have been granted with the specified access rights.
   ///
@@ -46,8 +54,9 @@ class HealthFactory {
   ///
   ///   On Android, this function returns true or false, depending on whether the specified access right has been granted.
   static Future<bool?> hasPermissions(List<HealthDataType> types, {List<HealthDataAccess>? permissions}) async {
-    if (permissions != null && permissions.length != types.length)
-      throw ArgumentError("The lists of types and permissions must be of same length.");
+    if (permissions != null && permissions.length != types.length) {
+      throw ArgumentError('The lists of types and permissions must be of same length.');
+    }
 
     final mTypes = List<HealthDataType>.from(types, growable: true);
     final mPermissions = permissions == null
@@ -55,11 +64,11 @@ class HealthFactory {
         : permissions.map((permission) => permission.index).toList();
 
     /// On Android, if BMI is requested, then also ask for weight and height
-    if (_platformType == PlatformType.ANDROID) _handleBMI(mTypes, mPermissions);
+    if (Platform.isAndroid) _handleBMI(mTypes, mPermissions);
 
     return await _channel.invokeMethod('hasPermissions', {
-      "types": mTypes.map((type) => type.typeToString()).toList(),
-      "permissions": mPermissions,
+      'types': mTypes.map((type) => type.typeToString()).toList(),
+      'permissions': mPermissions,
     });
   }
 
@@ -105,7 +114,7 @@ class HealthFactory {
 
     List<String> keys = mTypes.map((e) => _enumToString(e)).toList();
     final bool? isAuthorized =
-        await _channel.invokeMethod('requestAuthorization', {'types': keys, "permissions": mPermissions});
+        await _channel.invokeMethod('requestAuthorization', {'types': keys, 'permissions': mPermissions});
     return isAuthorized ?? false;
   }
 
@@ -128,18 +137,17 @@ class HealthFactory {
 
   /// Calculate the BMI using the last observed height and weight values.
   Future<List<HealthDataPoint>> _computeAndroidBMI(DateTime startTime, DateTime endTime) async {
-    List<HealthDataPoint> heights = await _prepareQuery(startTime, endTime, HealthDataType.HEIGHT);
+    List<HealthDataPoint> heights = await _prepareQuery(startTime, endTime, [HealthDataType.HEIGHT], true);
 
     if (heights.isEmpty) {
-      return [];
+      return const [];
     }
 
-    List<HealthDataPoint> weights = await _prepareQuery(startTime, endTime, HealthDataType.WEIGHT);
-
+    List<HealthDataPoint> weights = await _prepareQuery(startTime, endTime, [HealthDataType.WEIGHT], true);
     double h = (heights.last.value as NumericHealthValue).numericValue.toDouble();
 
     const dataType = HealthDataType.BODY_MASS_INDEX;
-    final unit = _dataTypeToUnit[dataType]!;
+    final unit = dataTypeToUnit[dataType]!;
 
     final bmiHealthPoints = <HealthDataPoint>[];
     for (var i = 0; i < weights.length; i++) {
@@ -174,29 +182,16 @@ class HealthFactory {
     HealthDataUnit? unit,
   }) async {
     if (type == HealthDataType.WORKOUT)
-      throw ArgumentError("Adding workouts should be done using the writeWorkoutData method.");
-    if (startTime.isAfter(endTime)) throw ArgumentError("startTime must be equal or earlier than endTime");
+      throw ArgumentError('Adding workouts should be done using the writeWorkoutData method.');
+    if (startTime.isAfter(endTime)) throw ArgumentError('startTime must be equal or earlier than endTime');
     if ([
       HealthDataType.HIGH_HEART_RATE_EVENT,
       HealthDataType.LOW_HEART_RATE_EVENT,
       HealthDataType.IRREGULAR_HEART_RATE_EVENT
-    ].contains(type)) throw ArgumentError("$type - iOS doesnt support writing this data type in HealthKit");
+    ].contains(type)) throw ArgumentError('$type - iOS doesnt support writing this data type in HealthKit');
 
     // Assign default unit if not specified
-    unit ??= _dataTypeToUnit[type]!;
-
-    // Align values to type in cases where the type defines the value.
-    // E.g. SLEEP_IN_BED should have value 0
-    if (type == HealthDataType.SLEEP_ASLEEP ||
-        type == HealthDataType.SLEEP_AWAKE ||
-        type == HealthDataType.SLEEP_IN_BED ||
-        type == HealthDataType.HEADACHE_NOT_PRESENT ||
-        type == HealthDataType.HEADACHE_MILD ||
-        type == HealthDataType.HEADACHE_MODERATE ||
-        type == HealthDataType.HEADACHE_SEVERE ||
-        type == HealthDataType.HEADACHE_UNSPECIFIED) {
-      value = _alignValue(type).toDouble();
-    }
+    unit ??= dataTypeToUnit[type]!;
 
     Map<String, dynamic> args = {
       'value': value,
@@ -227,12 +222,12 @@ class HealthFactory {
       List<double> rightEarSensitivities, DateTime startTime, DateTime endTime,
       {Map<String, dynamic>? metadata}) async {
     if (frequencies.isEmpty || leftEarSensitivities.isEmpty || rightEarSensitivities.isEmpty)
-      throw ArgumentError("frequencies, leftEarSensitivities and rightEarSensitivities can't be empty");
+      throw ArgumentError('frequencies, leftEarSensitivities and rightEarSensitivities can\'t be empty');
     if (frequencies.length != leftEarSensitivities.length ||
         rightEarSensitivities.length != leftEarSensitivities.length)
-      throw ArgumentError("frequencies, leftEarSensitivities and rightEarSensitivities need to be of the same length");
-    if (startTime.isAfter(endTime)) throw ArgumentError("startTime must be equal or earlier than endTime");
-    if (_platformType == PlatformType.ANDROID) throw UnsupportedError("writeAudiogram is not supported on Android");
+      throw ArgumentError('frequencies, leftEarSensitivities and rightEarSensitivities need to be of the same length');
+    if (startTime.isAfter(endTime)) throw ArgumentError('startTime must be equal or earlier than endTime');
+    if (_platformType == PlatformType.ANDROID) throw UnsupportedError('writeAudiogram is not supported on Android');
     Map<String, dynamic> args = {
       'frequencies': frequencies,
       'leftEarSensitivities': leftEarSensitivities,
@@ -249,94 +244,108 @@ class HealthFactory {
   /// Fetch a list of health data points based on [types].
   Future<List<HealthDataPoint>> getHealthDataFromTypes(DateTime startTime, DateTime endTime, List<HealthDataType> types,
       [bool deduplicates = true]) async {
-    List<HealthDataPoint> dataPoints = [];
-
-    for (var type in types) {
-      final result = await _prepareQuery(startTime, endTime, type);
-      dataPoints.addAll(result);
-    }
-
-    if (deduplicates) {
-      dataPoints = await removeDuplicatesCompute(dataPoints);
-    }
+    List<HealthDataPoint> dataPoints = await _prepareQuery(startTime, endTime, types, deduplicates);
     return dataPoints;
   }
 
   /// Prepares a query, i.e. checks if the types are available, etc.
-  Future<List<HealthDataPoint>> _prepareQuery(DateTime startTime, DateTime endTime, HealthDataType dataType) async {
+  Future<List<HealthDataPoint>> _prepareQuery(
+    DateTime startTime, DateTime endTime, List<HealthDataType> dataType, bool deduplicate
+  ) async {
     // Ask for device ID only once
     _deviceId ??= _platformType == PlatformType.ANDROID
         ? (await _deviceInfo.androidInfo).id
         : (await _deviceInfo.iosInfo).identifierForVendor;
 
     // If not implemented on platform, throw an exception
-    if (!isDataTypeAvailable(dataType)) {
-      throw HealthException(dataType, 'Not available on platform $_platformType');
+    for (var type in dataType) {
+      if (!isDataTypeAvailable(type)) {
+        throw HealthException(dataType, 'Not available on platform $_platformType');
+      }
     }
 
     // If BodyMassIndex is requested on Android, calculate this manually
-    if (dataType == HealthDataType.BODY_MASS_INDEX && _platformType == PlatformType.ANDROID) {
+    if (dataType.contains(HealthDataType.BODY_MASS_INDEX) && _platformType == PlatformType.ANDROID) {
+      dataType.removeWhere((e) => e == HealthDataType.BODY_MASS_INDEX);
       return _computeAndroidBMI(startTime, endTime);
     }
-    return await _dataQuery(startTime, endTime, dataType);
+
+
+    return await _dataQuery(startTime, endTime, dataType, deduplicate);
   }
 
   /// The main function for fetching health data
-  Future<List<HealthDataPoint>> _dataQuery(DateTime startTime, DateTime endTime, HealthDataType dataType) async {
-    final args = <String, dynamic>{
-      'dataTypeKey': dataType.typeToString(),
-      'dataUnitKey': _dataTypeToUnit[dataType]!.typeToString(),
-      'startTime': startTime.millisecondsSinceEpoch,
-      'endTime': endTime.millisecondsSinceEpoch
-    };
-    final fetchedDataPoints = await _channel.invokeMethod('getData', args);
-    if (fetchedDataPoints != null) {
-      final mesg = <String, dynamic>{
-        "dataType": dataType,
-        "dataPoints": fetchedDataPoints,
-        "deviceId": '$_deviceId',
+  Future<List<HealthDataPoint>> _dataQuery(DateTime startTime, DateTime endTime, List<HealthDataType> dataType, bool deduplicate) async {
+    var results = await Future.wait<Map<String, dynamic>?>(dataType.map((e) async {
+      final args = <String, dynamic>{
+        'dataTypeKey': e.typeToString(),
+        'dataUnitKey': dataTypeToUnit[e]!.typeToString(),
+        'startTime': startTime.millisecondsSinceEpoch,
+        'endTime': endTime.millisecondsSinceEpoch,
       };
-      const thresHold = 100;
-      // If the no. of data points are larger than the threshold,
-      // call the compute method to spawn an Isolate to do the parsing in a separate thread.
-      if (fetchedDataPoints.length > thresHold) {
-        return compute(_parse, mesg);
+      final fetchedDataPoints = await _channel.invokeMethod('getData', args);
+      if (fetchedDataPoints != null) {
+        return <String, dynamic>{
+          'dataType': e,
+          'dataPoints': fetchedDataPoints,
+          'deviceId': '$_deviceId',
+          'deduplicate': deduplicate,
+        };
+      } else {
+        return null;
       }
-      return _parse(mesg);
-    } else {
-      return <HealthDataPoint>[];
+    }).toList(growable: false));
+    // removes all unsuccessful queries
+    results.removeWhere((element) => element == null);
+    var r = results.cast<Map<String, dynamic>>();
+
+    int size = 0;
+    for (var item in r) {
+      size += item.length;
+
     }
+    const thresHold = 100;
+    // If the no. of data points are larger than the threshold,
+    // call the compute method to spawn an Isolate to do the parsing in a separate thread.
+    if (size > thresHold) return compute(_parse, r);
+    return _parse(r);
   }
 
-  static List<HealthDataPoint> _parse(Map<String, dynamic> message) {
-    final dataType = message["dataType"];
-    final dataPoints = message["dataPoints"];
-    final device = message["deviceId"];
-    final unit = _dataTypeToUnit[dataType]!;
-    final list = dataPoints.map<HealthDataPoint>((e) {
-      // Handling different [HealthValue] types
-      HealthValue value;
-      if (dataType == HealthDataType.AUDIOGRAM) {
-        value = AudiogramHealthValue.fromJson(e);
-      } else if (dataType == HealthDataType.WORKOUT) {
-        value = WorkoutHealthValue.fromJson(e);
-      } else {
-        value = NumericHealthValue(e['value']);
-      }
-      return HealthDataPoint(
-        value,
-        dataType,
-        unit,
-        DateTime.fromMillisecondsSinceEpoch(e['date_from']),
-        DateTime.fromMillisecondsSinceEpoch(e['date_to']),
-        _platformType,
-        device,
-        e["source_id"],
-        e["source_name"],
-      );
-    }).toList();
+  static List<HealthDataPoint> _parse(List<Map<String, dynamic>> messages) {
+    final results = <HealthDataPoint>[];
 
-    return list;
+    for (final message in messages) {
+      final dataType = message['dataType'] as HealthDataType;
+      final dataPoints = message['dataPoints'] as List<dynamic>;
+      final device = message['deviceId'] as String;
+      final deduplicate = message['deduplicate'] as bool;
+      final unit = dataTypeToUnit[dataType] ?? HealthDataUnit.UNKNOWN_UNIT;
+      var list = dataPoints.map<HealthDataPoint>((e) {
+        // Handling different [HealthValue] types
+        HealthValue value;
+        if (dataType == HealthDataType.AUDIOGRAM) {
+          value = AudiogramHealthValue.fromJson(e);
+        } else if (dataType == HealthDataType.WORKOUT) {
+          value = WorkoutHealthValue.fromJson(e);
+        } else {
+          value = NumericHealthValue(e['value']);
+        }
+
+        return HealthDataPoint(
+          value, dataType, unit,
+          DateTime.fromMillisecondsSinceEpoch(e['date_from']),
+          DateTime.fromMillisecondsSinceEpoch(e['date_to']),
+          _platformType, device, e['source_id'], e['source_name'],
+        );
+      }).toList();
+
+      if (deduplicate) {
+        list = removeDuplicates(list);
+      }
+
+      results.addAll(list);
+    }
+    return results;
   }
 
   static Future<List<HealthDataPoint>> removeDuplicatesCompute(List<HealthDataPoint> points,
@@ -373,30 +382,6 @@ class HealthFactory {
     return stepsCount;
   }
 
-  int _alignValue(HealthDataType type) {
-    switch (type) {
-      case HealthDataType.SLEEP_IN_BED:
-        return 0;
-      case HealthDataType.SLEEP_ASLEEP:
-        return 1;
-      case HealthDataType.SLEEP_AWAKE:
-        return 2;
-      case HealthDataType.HEADACHE_UNSPECIFIED:
-        return 0;
-      case HealthDataType.HEADACHE_NOT_PRESENT:
-        return 1;
-      case HealthDataType.HEADACHE_MILD:
-        return 2;
-      case HealthDataType.HEADACHE_MODERATE:
-        return 3;
-      case HealthDataType.HEADACHE_SEVERE:
-        return 4;
-      default:
-        throw HealthException(type,
-            "HealthDataType was not aligned correctly - please report bug at https://github.com/cph-cachet/flutter-plugins/issues");
-    }
-  }
-
   /// Write workout data to Apple Health
   ///
   /// Returns true if successfully added workout data.
@@ -420,9 +405,9 @@ class HealthFactory {
   }) async {
     // Check that value is on the current Platform
     if (_platformType == PlatformType.IOS && !_isOnIOS(activityType)) {
-      throw HealthException(activityType, "Workout activity type $activityType is not supported on iOS");
+      throw HealthException(activityType, 'Workout activity type $activityType is not supported on iOS');
     } else if (!_isOnAndroid(activityType)) {
-      throw HealthException(activityType, "Workout activity type $activityType is not supported on Android");
+      throw HealthException(activityType, 'Workout activity type $activityType is not supported on Android');
     }
     final args = <String, dynamic>{
       'activityType': activityType.typeToString(),
@@ -440,193 +425,12 @@ class HealthFactory {
   /// Check if the given [HealthWorkoutActivityType] is supported on the iOS platform
   bool _isOnIOS(HealthWorkoutActivityType type) {
     // Returns true if the type is part of the iOS set
-    return const {
-      HealthWorkoutActivityType.ARCHERY,
-      HealthWorkoutActivityType.BADMINTON,
-      HealthWorkoutActivityType.BASEBALL,
-      HealthWorkoutActivityType.BASKETBALL,
-      HealthWorkoutActivityType.BIKING,
-      HealthWorkoutActivityType.BOXING,
-      HealthWorkoutActivityType.CRICKET,
-      HealthWorkoutActivityType.CURLING,
-      HealthWorkoutActivityType.ELLIPTICAL,
-      HealthWorkoutActivityType.FENCING,
-      HealthWorkoutActivityType.AMERICAN_FOOTBALL,
-      HealthWorkoutActivityType.AUSTRALIAN_FOOTBALL,
-      HealthWorkoutActivityType.SOCCER,
-      HealthWorkoutActivityType.GOLF,
-      HealthWorkoutActivityType.GYMNASTICS,
-      HealthWorkoutActivityType.HANDBALL,
-      HealthWorkoutActivityType.HIGH_INTENSITY_INTERVAL_TRAINING,
-      HealthWorkoutActivityType.HIKING,
-      HealthWorkoutActivityType.HOCKEY,
-      HealthWorkoutActivityType.SKATING,
-      HealthWorkoutActivityType.JUMP_ROPE,
-      HealthWorkoutActivityType.KICKBOXING,
-      HealthWorkoutActivityType.MARTIAL_ARTS,
-      HealthWorkoutActivityType.PILATES,
-      HealthWorkoutActivityType.RACQUETBALL,
-      HealthWorkoutActivityType.ROWING,
-      HealthWorkoutActivityType.RUGBY,
-      HealthWorkoutActivityType.RUNNING,
-      HealthWorkoutActivityType.SAILING,
-      HealthWorkoutActivityType.CROSS_COUNTRY_SKIING,
-      HealthWorkoutActivityType.DOWNHILL_SKIING,
-      HealthWorkoutActivityType.SNOWBOARDING,
-      HealthWorkoutActivityType.SOFTBALL,
-      HealthWorkoutActivityType.SQUASH,
-      HealthWorkoutActivityType.STAIR_CLIMBING,
-      HealthWorkoutActivityType.SWIMMING,
-      HealthWorkoutActivityType.TABLE_TENNIS,
-      HealthWorkoutActivityType.TENNIS,
-      HealthWorkoutActivityType.VOLLEYBALL,
-      HealthWorkoutActivityType.WALKING,
-      HealthWorkoutActivityType.WATER_POLO,
-      HealthWorkoutActivityType.YOGA,
-      HealthWorkoutActivityType.BOWLING,
-      HealthWorkoutActivityType.CROSS_TRAINING,
-      HealthWorkoutActivityType.TRACK_AND_FIELD,
-      HealthWorkoutActivityType.DISC_SPORTS,
-      HealthWorkoutActivityType.LACROSSE,
-      HealthWorkoutActivityType.PREPARATION_AND_RECOVERY,
-      HealthWorkoutActivityType.FLEXIBILITY,
-      HealthWorkoutActivityType.COOLDOWN,
-      HealthWorkoutActivityType.WHEELCHAIR_WALK_PACE,
-      HealthWorkoutActivityType.WHEELCHAIR_RUN_PACE,
-      HealthWorkoutActivityType.HAND_CYCLING,
-      HealthWorkoutActivityType.CORE_TRAINING,
-      HealthWorkoutActivityType.FUNCTIONAL_STRENGTH_TRAINING,
-      HealthWorkoutActivityType.TRADITIONAL_STRENGTH_TRAINING,
-      HealthWorkoutActivityType.MIXED_CARDIO,
-      HealthWorkoutActivityType.STAIRS,
-      HealthWorkoutActivityType.STEP_TRAINING,
-      HealthWorkoutActivityType.FITNESS_GAMING,
-      HealthWorkoutActivityType.BARRE,
-      HealthWorkoutActivityType.CARDIO_DANCE,
-      HealthWorkoutActivityType.SOCIAL_DANCE,
-      HealthWorkoutActivityType.MIND_AND_BODY,
-      HealthWorkoutActivityType.PICKLEBALL,
-      HealthWorkoutActivityType.CLIMBING,
-      HealthWorkoutActivityType.EQUESTRIAN_SPORTS,
-      HealthWorkoutActivityType.FISHING,
-      HealthWorkoutActivityType.HUNTING,
-      HealthWorkoutActivityType.PLAY,
-      HealthWorkoutActivityType.SNOW_SPORTS,
-      HealthWorkoutActivityType.PADDLE_SPORTS,
-      HealthWorkoutActivityType.SURFING_SPORTS,
-      HealthWorkoutActivityType.WATER_FITNESS,
-      HealthWorkoutActivityType.WATER_SPORTS,
-      HealthWorkoutActivityType.TAI_CHI,
-      HealthWorkoutActivityType.WRESTLING,
-      HealthWorkoutActivityType.OTHER,
-    }.contains(type);
+    return activityTypesiOS.contains(type);
   }
 
   /// Check if the given [HealthWorkoutActivityType] is supported on the Android platform
   bool _isOnAndroid(HealthWorkoutActivityType type) {
     // Returns true if the type is part of the Android set
-    return const {
-      HealthWorkoutActivityType.ARCHERY,
-      HealthWorkoutActivityType.BADMINTON,
-      HealthWorkoutActivityType.BASEBALL,
-      HealthWorkoutActivityType.BASKETBALL,
-      HealthWorkoutActivityType.BIKING,
-      HealthWorkoutActivityType.BOXING,
-      HealthWorkoutActivityType.CRICKET,
-      HealthWorkoutActivityType.CURLING,
-      HealthWorkoutActivityType.ELLIPTICAL,
-      HealthWorkoutActivityType.FENCING,
-      HealthWorkoutActivityType.AMERICAN_FOOTBALL,
-      HealthWorkoutActivityType.AUSTRALIAN_FOOTBALL,
-      HealthWorkoutActivityType.SOCCER,
-      HealthWorkoutActivityType.GOLF,
-      HealthWorkoutActivityType.GYMNASTICS,
-      HealthWorkoutActivityType.HANDBALL,
-      HealthWorkoutActivityType.HIGH_INTENSITY_INTERVAL_TRAINING,
-      HealthWorkoutActivityType.HIKING,
-      HealthWorkoutActivityType.HOCKEY,
-      HealthWorkoutActivityType.SKATING,
-      HealthWorkoutActivityType.JUMP_ROPE,
-      HealthWorkoutActivityType.KICKBOXING,
-      HealthWorkoutActivityType.MARTIAL_ARTS,
-      HealthWorkoutActivityType.PILATES,
-      HealthWorkoutActivityType.RACQUETBALL,
-      HealthWorkoutActivityType.ROWING,
-      HealthWorkoutActivityType.RUGBY,
-      HealthWorkoutActivityType.RUNNING,
-      HealthWorkoutActivityType.SAILING,
-      HealthWorkoutActivityType.CROSS_COUNTRY_SKIING,
-      HealthWorkoutActivityType.DOWNHILL_SKIING,
-      HealthWorkoutActivityType.SNOWBOARDING,
-      HealthWorkoutActivityType.SOFTBALL,
-      HealthWorkoutActivityType.SQUASH,
-      HealthWorkoutActivityType.STAIR_CLIMBING,
-      HealthWorkoutActivityType.SWIMMING,
-      HealthWorkoutActivityType.TABLE_TENNIS,
-      HealthWorkoutActivityType.TENNIS,
-      HealthWorkoutActivityType.VOLLEYBALL,
-      HealthWorkoutActivityType.WALKING,
-      HealthWorkoutActivityType.WATER_POLO,
-      HealthWorkoutActivityType.YOGA,
-      HealthWorkoutActivityType.AEROBICS,
-      HealthWorkoutActivityType.BIATHLON,
-      HealthWorkoutActivityType.CALISTHENICS,
-      HealthWorkoutActivityType.CIRCUIT_TRAINING,
-      HealthWorkoutActivityType.CROSS_FIT,
-      HealthWorkoutActivityType.DANCING,
-      HealthWorkoutActivityType.DIVING,
-      HealthWorkoutActivityType.ELEVATOR,
-      HealthWorkoutActivityType.ERGOMETER,
-      HealthWorkoutActivityType.ESCALATOR,
-      HealthWorkoutActivityType.FRISBEE_DISC,
-      HealthWorkoutActivityType.GARDENING,
-      HealthWorkoutActivityType.GUIDED_BREATHING,
-      HealthWorkoutActivityType.HORSEBACK_RIDING,
-      HealthWorkoutActivityType.HOUSEWORK,
-      HealthWorkoutActivityType.INTERVAL_TRAINING,
-      HealthWorkoutActivityType.IN_VEHICLE,
-      HealthWorkoutActivityType.KAYAKING,
-      HealthWorkoutActivityType.KETTLEBELL_TRAINING,
-      HealthWorkoutActivityType.KICK_SCOOTER,
-      HealthWorkoutActivityType.KITE_SURFING,
-      HealthWorkoutActivityType.MEDITATION,
-      HealthWorkoutActivityType.MIXED_MARTIAL_ARTS,
-      HealthWorkoutActivityType.P90X,
-      HealthWorkoutActivityType.PARAGLIDING,
-      HealthWorkoutActivityType.POLO,
-      HealthWorkoutActivityType.ROCK_CLIMBING,
-      HealthWorkoutActivityType.RUNNING_JOGGING,
-      HealthWorkoutActivityType.RUNNING_SAND,
-      HealthWorkoutActivityType.RUNNING_TREADMILL,
-      HealthWorkoutActivityType.SCUBA_DIVING,
-      HealthWorkoutActivityType.SKATING_CROSS,
-      HealthWorkoutActivityType.SKATING_INDOOR,
-      HealthWorkoutActivityType.SKATING_INLINE,
-      HealthWorkoutActivityType.SKIING_BACK_COUNTRY,
-      HealthWorkoutActivityType.SKIING_KITE,
-      HealthWorkoutActivityType.SKIING_ROLLER,
-      HealthWorkoutActivityType.SLEDDING,
-      HealthWorkoutActivityType.STAIR_CLIMBING_MACHINE,
-      HealthWorkoutActivityType.STANDUP_PADDLEBOARDING,
-      HealthWorkoutActivityType.STILL,
-      HealthWorkoutActivityType.STRENGTH_TRAINING,
-      HealthWorkoutActivityType.SURFING,
-      HealthWorkoutActivityType.SWIMMING_OPEN_WATER,
-      HealthWorkoutActivityType.SWIMMING_POOL,
-      HealthWorkoutActivityType.TEAM_SPORTS,
-      HealthWorkoutActivityType.TILTING,
-      HealthWorkoutActivityType.VOLLEYBALL_BEACH,
-      HealthWorkoutActivityType.VOLLEYBALL_INDOOR,
-      HealthWorkoutActivityType.WAKEBOARDING,
-      HealthWorkoutActivityType.WALKING_FITNESS,
-      HealthWorkoutActivityType.WALKING_NORDIC,
-      HealthWorkoutActivityType.WALKING_STROLLER,
-      HealthWorkoutActivityType.WALKING_TREADMILL,
-      HealthWorkoutActivityType.WEIGHTLIFTING,
-      HealthWorkoutActivityType.WHEELCHAIR,
-      HealthWorkoutActivityType.WINDSURFING,
-      HealthWorkoutActivityType.ZUMBA,
-      HealthWorkoutActivityType.OTHER,
-    }.contains(type);
+    return activityTypesAndroid.contains(type);
   }
 }

@@ -45,16 +45,10 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
     let FLIGHTS_CLIMBED = "FLIGHTS_CLIMBED"
     let WATER = "WATER"
     let MINDFULNESS = "MINDFULNESS"
-    let SLEEP_IN_BED = "SLEEP_IN_BED"
-    let SLEEP_ASLEEP = "SLEEP_ASLEEP"
-    let SLEEP_AWAKE = "SLEEP_AWAKE"
+    let SLEEP = "SLEEP"
     let EXERCISE_TIME = "EXERCISE_TIME"
     let WORKOUT = "WORKOUT"
-    let HEADACHE_UNSPECIFIED = "HEADACHE_UNSPECIFIED"
-    let HEADACHE_NOT_PRESENT = "HEADACHE_NOT_PRESENT"
-    let HEADACHE_MILD = "HEADACHE_MILD"
-    let HEADACHE_MODERATE = "HEADACHE_MODERATE"
-    let HEADACHE_SEVERE = "HEADACHE_SEVERE"
+    let HEADACHE = "HEADACHE"
     
     // Health Unit types
     // MOLE_UNIT_WITH_MOLAR_MASS, // requires molar mass input - not supported yet
@@ -114,25 +108,27 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "flutter_health", binaryMessenger: registrar.messenger())
         let instance = SwiftHealthPlugin()
+        instance.initializeTypes()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         // Set up all data types
-        initializeTypes()
+        //initializeTypes()
         
         /// Handle checkIfHealthDataAvailable
         if (call.method.elementsEqual("checkIfHealthDataAvailable")){
             checkIfHealthDataAvailable(call: call, result: result)
         }
-        /// Handle requestAuthorization
-        else if (call.method.elementsEqual("requestAuthorization")){
-            try! requestAuthorization(call: call, result: result)
-        }
         
         /// Handle getData
         else if (call.method.elementsEqual("getData")){
             getData(call: call, result: result)
+        }
+
+        /// Handle requestAuthorization
+        else if (call.method.elementsEqual("requestAuthorization")){
+            try! requestAuthorization(call: call, result: result)
         }
         
         /// Handle getTotalStepsInInterval
@@ -176,7 +172,10 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
         
         for (index, type) in types.enumerated() {
             let sampleType = dataTypeLookUp(key: type)
-            let success = hasPermission(type: sampleType, access: permissions[index])
+            if sampleType == nil {
+                continue
+            }
+            let success = hasPermission(type: sampleType!, access: permissions[index])
             if (success == nil || success == false) {
                 result(success)
                 return
@@ -219,15 +218,17 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
         var typesToWrite = Set<HKSampleType>()
         for (index, key) in types.enumerated() {
             let dataType = dataTypeLookUp(key: key)
-            let access = permissions[index]
-            switch access {
-            case 0:
-                typesToRead.insert(dataType)
-            case 1:
-                typesToWrite.insert(dataType)
-            default:
-                typesToRead.insert(dataType)
-                typesToWrite.insert(dataType)
+            if dataType != nil {
+                let access = permissions[index]
+                switch access {
+                case 0:
+                    typesToRead.insert(dataType!)
+                case 1:
+                    typesToWrite.insert(dataType!)
+                default:
+                    typesToRead.insert(dataType!)
+                    typesToWrite.insert(dataType!)
+                }
             }
         }
         
@@ -378,6 +379,13 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
         let dateTo = Date(timeIntervalSince1970: endTime.doubleValue / 1000)
         
         let dataType = dataTypeLookUp(key: dataTypeKey)
+        if dataType == nil {
+            DispatchQueue.main.async {
+                result([])
+            }
+            return
+        }
+
         var unit: HKUnit?
         if let dataUnitKey = dataUnitKey {
             unit = unitDict[dataUnitKey]
@@ -386,7 +394,7 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
         let predicate = HKQuery.predicateForSamples(withStart: dateFrom, end: dateTo, options: .strictStartDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
         
-        let query = HKSampleQuery(sampleType: dataType, predicate: predicate, limit: limit, sortDescriptors: [sortDescriptor]) { [self]
+        let query = HKSampleQuery(sampleType: dataType!, predicate: predicate, limit: limit, sortDescriptors: [sortDescriptor]) { [self]
             x, samplesOrNil, error in
             
             switch samplesOrNil {
@@ -407,30 +415,6 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
                 }
                 
             case var (samplesCategory as [HKCategorySample]) as Any:
-                if (dataTypeKey == self.SLEEP_IN_BED) {
-                    samplesCategory = samplesCategory.filter { $0.value == 0 }
-                }
-                if (dataTypeKey == self.SLEEP_ASLEEP) {
-                    samplesCategory = samplesCategory.filter { $0.value == 1 }
-                }
-                if (dataTypeKey == self.SLEEP_AWAKE) {
-                    samplesCategory = samplesCategory.filter { $0.value == 2 }
-                }
-                if (dataTypeKey == self.HEADACHE_UNSPECIFIED) {
-                    samplesCategory = samplesCategory.filter { $0.value == 0 }
-                }
-                if (dataTypeKey == self.HEADACHE_NOT_PRESENT) {
-                    samplesCategory = samplesCategory.filter { $0.value == 1 }
-                }
-                if (dataTypeKey == self.HEADACHE_MILD) {
-                    samplesCategory = samplesCategory.filter { $0.value == 2 }
-                }
-                if (dataTypeKey == self.HEADACHE_MODERATE) {
-                    samplesCategory = samplesCategory.filter { $0.value == 3 }
-                }
-                if (dataTypeKey == self.HEADACHE_SEVERE) {
-                    samplesCategory = samplesCategory.filter { $0.value == 4 }
-                }
                 let categories = samplesCategory.map { sample -> NSDictionary in
                     return [
                         "uuid": "\(sample.uuid)",
@@ -550,14 +534,15 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
         return unit
     }
     
-    func dataTypeLookUp(key: String) -> HKSampleType {
+    func dataTypeLookUp(key: String) -> HKSampleType? {
         guard let dataType_ = dataTypesDict[key] else {
-            return HKSampleType.quantityType(forIdentifier: .bodyMass)!
+            return nil
+            //return HKSampleType.quantityType(forIdentifier: .bodyMass)!
         }
         return dataType_
     }
     
-    func initializeTypes() {
+    public func initializeTypes() {
         // Initialize units
         unitDict[GRAM] = HKUnit.gram()
         unitDict[KILOGRAM] = HKUnit.gramUnit(with: .kilo)
@@ -720,9 +705,7 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
             dataTypesDict[FLIGHTS_CLIMBED] = HKSampleType.quantityType(forIdentifier: .flightsClimbed)!
             dataTypesDict[WATER] = HKSampleType.quantityType(forIdentifier: .dietaryWater)!
             dataTypesDict[MINDFULNESS] = HKSampleType.categoryType(forIdentifier: .mindfulSession)!
-            dataTypesDict[SLEEP_IN_BED] = HKSampleType.categoryType(forIdentifier: .sleepAnalysis)!
-            dataTypesDict[SLEEP_ASLEEP] = HKSampleType.categoryType(forIdentifier: .sleepAnalysis)!
-            dataTypesDict[SLEEP_AWAKE] = HKSampleType.categoryType(forIdentifier: .sleepAnalysis)!
+            dataTypesDict[SLEEP] = HKSampleType.categoryType(forIdentifier: .sleepAnalysis)!
             dataTypesDict[EXERCISE_TIME] = HKSampleType.quantityType(forIdentifier: .appleExerciseTime)!
             dataTypesDict[WORKOUT] = HKSampleType.workoutType()
             
@@ -742,12 +725,8 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
         }
         
         if #available(iOS 13.6, *){
-            dataTypesDict[HEADACHE_UNSPECIFIED] = HKSampleType.categoryType(forIdentifier: .headache)!
-            dataTypesDict[HEADACHE_NOT_PRESENT] = HKSampleType.categoryType(forIdentifier: .headache)!
-            dataTypesDict[HEADACHE_MILD] = HKSampleType.categoryType(forIdentifier: .headache)!
-            dataTypesDict[HEADACHE_MODERATE] = HKSampleType.categoryType(forIdentifier: .headache)!
-            dataTypesDict[HEADACHE_SEVERE] = HKSampleType.categoryType(forIdentifier: .headache)!
-            
+            dataTypesDict[HEADACHE] = HKSampleType.categoryType(forIdentifier: .headache)!
+
             headacheType = Set([
                 HKSampleType.categoryType(forIdentifier: .headache)!,
             ])
