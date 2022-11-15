@@ -59,6 +59,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   private var MOVE_MINUTES = "MOVE_MINUTES"
   private var DISTANCE_DELTA = "DISTANCE_DELTA"
   private var WATER = "WATER"
+  private var SLEEP = "SLEEP"
   private var SLEEP_ASLEEP = "SLEEP_ASLEEP"
   private var SLEEP_AWAKE = "SLEEP_AWAKE"
   private var SLEEP_IN_BED = "SLEEP_IN_BED"
@@ -169,12 +170,14 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   )
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    Log.d("FLUTTER_HEALTH", "onAttachedToEngine")
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, CHANNEL_NAME)
     channel?.setMethodCallHandler(this)
     threadPoolExecutor = Executors.newFixedThreadPool(4)
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+    Log.d("FLUTTER_HEALTH", "onDetachedFromEngine")
     channel = null
     activity = null
     threadPoolExecutor!!.shutdown()
@@ -936,7 +939,9 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   }
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+    Log.d("FLUTTER_HEALTH", "onAttachedToActivity")
     if (channel == null) {
+      Log.d("FLUTTER_HEALTH", "onAttachedToActivity: channel is null")
       return
     }
     binding.addActivityResultListener(this)
@@ -944,15 +949,19 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
+    Log.d("FLUTTER_HEALTH", "onDetachedFromActivityForConfigChanges")
     onDetachedFromActivity()
   }
 
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+    Log.d("FLUTTER_HEALTH", "onReattachedToActivityForConfigChanges")
     onAttachedToActivity(binding)
   }
 
   override fun onDetachedFromActivity() {
+    Log.d("FLUTTER_HEALTH", "onDetachedFromActivity")
     if (channel == null) {
+      Log.d("FLUTTER_HEALTH", "onDetachedFromActivity: channel is null")
       return
     }
     activity = null
