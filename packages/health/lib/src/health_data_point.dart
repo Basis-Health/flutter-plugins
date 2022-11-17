@@ -9,12 +9,12 @@ class HealthDataPoint {
   DateTime _dateFrom;
   DateTime _dateTo;
   PlatformType _platform;
-  String _deviceId;
   String _sourceId;
   String _sourceName;
 
-  HealthDataPoint(this._value, this._type, this._unit, this._dateFrom, this._dateTo, this._platform, this._deviceId,
-      this._sourceId, this._sourceName);
+  HealthDataPoint(
+    this._value, this._type, this._unit, this._dateFrom, this._dateTo, this._platform,
+    this._sourceId, this._sourceName);
 
   /// Converts a json object to the [HealthDataPoint]
   factory HealthDataPoint.fromJson(json) {
@@ -35,7 +35,6 @@ class HealthDataPoint {
         DateTime.parse(json['date_from']),
         DateTime.parse(json['date_to']),
         platformTypeJsonValueReverse[json['platform_type']]!,
-        json['device_id'],
         json['source_id'],
         json['source_name']);
   }
@@ -48,7 +47,6 @@ class HealthDataPoint {
         'date_from': dateFrom.toIso8601String(),
         'date_to': dateTo.toIso8601String(),
         'platform_type': PlatformTypeJsonValue[platform],
-        'device_id': deviceId,
         'source_id': sourceId,
         'source_name': sourceName
       };
@@ -61,7 +59,6 @@ class HealthDataPoint {
     dateTo: $dateTo,
     dataType: $type,
     platform: $platform,
-    deviceId: $deviceId,
     sourceId: $sourceId,
     sourceName: $sourceName""";
 
@@ -89,9 +86,6 @@ class HealthDataPoint {
   /// The data point unit as a string
   String get unitString => _unit.typeToString();
 
-  /// The id of the device from which the data point was fetched.
-  String get deviceId => _deviceId;
-
   /// The id of the source from which the data point was fetched.
   String get sourceId => _sourceId;
 
@@ -109,11 +103,10 @@ class HealthDataPoint {
         this.dateTo == o.dateTo &&
         this.type == o.type &&
         this.platform == o.platform &&
-        this.deviceId == o.deviceId &&
         this.sourceId == o.sourceId &&
         this.sourceName == o.sourceName;
   }
 
   @override
-  int get hashCode => Object.hash(value, unit, dateFrom, dateTo, type, platform, deviceId, sourceId, sourceName);
+  int get hashCode => Object.hash(value, unit, dateFrom, dateTo, type, platform, sourceId, sourceName);
 }

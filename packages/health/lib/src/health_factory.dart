@@ -12,8 +12,6 @@ part of health;
 ///  * cleaning up dublicate data points via the [removeDuplicates] method.
 class HealthFactory {
   static const MethodChannel _channel = MethodChannel('flutter_health');
-  String? _deviceId;
-  final _deviceInfo = DeviceInfoPlugin();
 
   static PlatformType _platformType = Platform.isAndroid ? PlatformType.ANDROID : PlatformType.IOS;
 
@@ -153,7 +151,7 @@ class HealthFactory {
     for (var i = 0; i < weights.length; i++) {
       final bmiValue = (weights[i].value as NumericHealthValue).numericValue.toDouble() / (h * h);
       final x = HealthDataPoint(NumericHealthValue(bmiValue), dataType, unit, weights[i].dateFrom, weights[i].dateTo,
-          _platformType, _deviceId!, '', '');
+          _platformType, '', '');
 
       bmiHealthPoints.add(x);
     }
@@ -252,11 +250,6 @@ class HealthFactory {
   Future<List<HealthDataPoint>> _prepareQuery(
     DateTime startTime, DateTime endTime, List<HealthDataType> dataType, bool deduplicate
   ) async {
-    // Ask for device ID only once
-    _deviceId ??= _platformType == PlatformType.ANDROID
-        ? (await _deviceInfo.androidInfo).id
-        : (await _deviceInfo.iosInfo).identifierForVendor;
-
     // If not implemented on platform, throw an exception
     for (var type in dataType) {
       if (!isDataTypeAvailable(type)) {
@@ -288,7 +281,6 @@ class HealthFactory {
         return <String, dynamic>{
           'dataType': e,
           'dataPoints': fetchedDataPoints,
-          'deviceId': '$_deviceId',
           'deduplicate': deduplicate,
         };
       } else {
@@ -317,7 +309,6 @@ class HealthFactory {
     for (final message in messages) {
       final dataType = message['dataType'] as HealthDataType;
       final dataPoints = message['dataPoints'] as List<dynamic>;
-      final device = message['deviceId'] as String;
       final deduplicate = message['deduplicate'] as bool;
       final unit = dataTypeToUnit[dataType] ?? HealthDataUnit.UNKNOWN_UNIT;
       var list = dataPoints.map<HealthDataPoint>((e) {
@@ -335,7 +326,7 @@ class HealthFactory {
           value, dataType, unit,
           DateTime.fromMillisecondsSinceEpoch(e['date_from']),
           DateTime.fromMillisecondsSinceEpoch(e['date_to']),
-          _platformType, device, e['source_id'], e['source_name'],
+          _platformType, e['source_id'], e['source_name'],
         );
       }).toList();
 
