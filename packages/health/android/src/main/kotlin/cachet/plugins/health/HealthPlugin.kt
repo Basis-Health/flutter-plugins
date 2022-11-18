@@ -294,6 +294,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
       MOVE_MINUTES -> Field.FIELD_DURATION
       DISTANCE_DELTA -> Field.FIELD_DISTANCE
       WATER -> Field.FIELD_VOLUME
+      SLEEP -> Field.FIELD_SLEEP_SEGMENT_TYPE
       SLEEP_ASLEEP -> Field.FIELD_SLEEP_SEGMENT_TYPE
       SLEEP_AWAKE -> Field.FIELD_SLEEP_SEGMENT_TYPE
       SLEEP_IN_BED -> Field.FIELD_SLEEP_SEGMENT_TYPE
