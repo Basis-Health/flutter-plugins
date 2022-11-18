@@ -1,7 +1,7 @@
 part of health;
 
 /// Extracts the string value from an enum
-String _enumToString(enumItem) => enumItem.toString().split('.').last;
+String healthEnumToString(enumItem) => enumItem.toString().split('.').last;
 
 late final Map<String, HealthWorkoutActivityType> _healthWorkoutActivityTypeReverse = Map.fromEntries(
   HealthWorkoutActivityType.values.map((e) => MapEntry(e.typeToString(), e)),
@@ -57,7 +57,7 @@ enum HealthDataType {
 
   /// Returns the string representation of the enum
   /// e.g. [HealthDataType.BLOOD_GLUCOSE] -> 'BLOOD_GLUCOSE'
-  String typeToString() => _enumToString(this);
+  String typeToString() => healthEnumToString(this);
 
   static HealthDataType fromTypeString(String v) => _healthDataTypeReverse[v]!;
 }
@@ -475,7 +475,7 @@ enum HealthDataUnit {
 
   /// Returns the string representation of the enum
   /// e.g. [HealthDataUnit.LITER] -> 'LITER'
-  String typeToString() => _enumToString(this);
+  String typeToString() => healthEnumToString(this);
 
   static HealthDataUnit fromTypeString(String type) => _healthDataUnitReverse[type]!;
 }
@@ -629,7 +629,7 @@ enum HealthWorkoutActivityType {
 
   /// Returns the string representation of the enum
   /// e.g. [HealthWorkoutActivityType.CYCLING] -> 'CYCLING'
-  String typeToString() => _enumToString(this);
+  String typeToString() => healthEnumToString(this);
 
   static HealthWorkoutActivityType fromTypeString(String type) => _healthWorkoutActivityTypeReverse[type]!;
 }
