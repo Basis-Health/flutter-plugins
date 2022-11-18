@@ -59,6 +59,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   private var MOVE_MINUTES = "MOVE_MINUTES"
   private var DISTANCE_DELTA = "DISTANCE_DELTA"
   private var WATER = "WATER"
+  private var SLEEP = "SLEEP"
   private var SLEEP_ASLEEP = "SLEEP_ASLEEP"
   private var SLEEP_AWAKE = "SLEEP_AWAKE"
   private var SLEEP_IN_BED = "SLEEP_IN_BED"
@@ -169,12 +170,14 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   )
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    Log.d("FLUTTER_HEALTH", "onAttachedToEngine")
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, CHANNEL_NAME)
     channel?.setMethodCallHandler(this)
     threadPoolExecutor = Executors.newFixedThreadPool(4)
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+    Log.d("FLUTTER_HEALTH", "onDetachedFromEngine")
     channel = null
     activity = null
     threadPoolExecutor!!.shutdown()
@@ -269,9 +272,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
       MOVE_MINUTES -> DataType.TYPE_MOVE_MINUTES
       DISTANCE_DELTA -> DataType.TYPE_DISTANCE_DELTA
       WATER -> DataType.TYPE_HYDRATION
-      SLEEP_ASLEEP -> DataType.TYPE_SLEEP_SEGMENT
-      SLEEP_AWAKE -> DataType.TYPE_SLEEP_SEGMENT
-      SLEEP_IN_BED -> DataType.TYPE_SLEEP_SEGMENT
+      SLEEP -> DataType.TYPE_SLEEP_SEGMENT
       WORKOUT -> DataType.TYPE_ACTIVITY_SEGMENT
       else -> throw IllegalArgumentException("Unsupported dataType: $type")
     }
@@ -567,12 +568,12 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
       DataType.TYPE_ACTIVITY_SEGMENT -> {
         val readRequest: SessionReadRequest
         val readRequestBuilder = SessionReadRequest.Builder()
-            .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-            .enableServerQueries()
-            .readSessionsFromAllApps()
-            .includeActivitySessions()
-            .read(dataType)
-            .read(DataType.TYPE_CALORIES_EXPENDED)
+          .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
+          .enableServerQueries()
+          .readSessionsFromAllApps()
+          .includeActivitySessions()
+          .read(dataType)
+          .read(DataType.TYPE_CALORIES_EXPENDED)
 
         // If fine location is enabled, read distance data
         if (ContextCompat.checkSelfPermission(
@@ -580,7 +581,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
             android.Manifest.permission.ACCESS_FINE_LOCATION
           ) == PackageManager.PERMISSION_GRANTED
         ) {
-          // Request permission with distance data. 
+          // Request permission with distance data.
           // Google Fit requires this when we query for distance data
           // as it is restricted data
           if (!GoogleSignIn.hasPermissions(googleSignInAccount, fitnessOptions)) {
@@ -592,7 +593,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
             )
           }
           readRequestBuilder.read(DataType.TYPE_DISTANCE_DELTA)
-        } 
+        }
         readRequest = readRequestBuilder.build()
         Fitness.getSessionsClient(activity!!.applicationContext, googleSignInAccount)
           .readSession(readRequest)
@@ -638,7 +639,6 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
     Log.i("FLUTTER_HEALTH::ERROR", exception.message ?: "unknown error")
     Log.i("FLUTTER_HEALTH::ERROR", exception.stackTrace.toString())
   }
-
   private fun sleepDataHandler(type: String, result: Result) =
     OnSuccessListener { response: SessionReadResponse ->
       val healthData: MutableList<Map<String, Any?>> = mutableListOf()
@@ -648,7 +648,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
         if (type == SLEEP_ASLEEP) {
           healthData.add(
             hashMapOf(
-              "value" to session.getEndTime(TimeUnit.MINUTES) - session.getStartTime(TimeUnit.MINUTES),
+              "value" to 1,
               "date_from" to session.getStartTime(TimeUnit.MILLISECONDS),
               "date_to" to session.getEndTime(TimeUnit.MILLISECONDS),
               "unit" to "MINUTES",
@@ -671,9 +671,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
                 ) {
                   healthData.add(
                     hashMapOf(
-                      "value" to dataPoint.getEndTime(TimeUnit.MINUTES) - dataPoint.getStartTime(
-                        TimeUnit.MINUTES
-                      ),
+                      "value" to 0,
                       "date_from" to dataPoint.getStartTime(TimeUnit.MILLISECONDS),
                       "date_to" to dataPoint.getEndTime(TimeUnit.MILLISECONDS),
                       "unit" to "MINUTES",
@@ -689,9 +687,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
           } else {
             healthData.add(
               hashMapOf(
-                "value" to session.getEndTime(TimeUnit.MINUTES) - session.getStartTime(
-                  TimeUnit.MINUTES
-                ),
+                "value" to 0,
                 "date_from" to session.getStartTime(TimeUnit.MILLISECONDS),
                 "date_to" to session.getEndTime(TimeUnit.MILLISECONDS),
                 "unit" to "MINUTES",
@@ -710,9 +706,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
               if (dataPoint.getValue(Field.FIELD_SLEEP_SEGMENT_TYPE).asInt() == 1) {
                 healthData.add(
                   hashMapOf(
-                    "value" to dataPoint.getEndTime(TimeUnit.MINUTES) - dataPoint.getStartTime(
-                      TimeUnit.MINUTES
-                    ),
+                    "value" to 2,
                     "date_from" to dataPoint.getStartTime(TimeUnit.MILLISECONDS),
                     "date_to" to dataPoint.getEndTime(TimeUnit.MILLISECONDS),
                     "unit" to "MINUTES",
@@ -789,7 +783,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
         }
         else -> throw IllegalArgumentException("Unknown access type $access")
       }
-      if (typeKey == SLEEP_ASLEEP || typeKey == SLEEP_AWAKE || typeKey == SLEEP_IN_BED || typeKey == WORKOUT) {
+      if (typeKey == SLEEP || typeKey == WORKOUT) {
         typesBuilder.accessSleepSessions(FitnessOptions.ACCESS_READ)
         when (access) {
           0 -> typesBuilder.accessSleepSessions(FitnessOptions.ACCESS_READ)
@@ -945,7 +939,9 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   }
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+    Log.d("FLUTTER_HEALTH", "onAttachedToActivity")
     if (channel == null) {
+      Log.d("FLUTTER_HEALTH", "onAttachedToActivity: channel is null")
       return
     }
     binding.addActivityResultListener(this)
@@ -953,15 +949,19 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
+    Log.d("FLUTTER_HEALTH", "onDetachedFromActivityForConfigChanges")
     onDetachedFromActivity()
   }
 
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+    Log.d("FLUTTER_HEALTH", "onReattachedToActivityForConfigChanges")
     onAttachedToActivity(binding)
   }
 
   override fun onDetachedFromActivity() {
+    Log.d("FLUTTER_HEALTH", "onDetachedFromActivity")
     if (channel == null) {
+      Log.d("FLUTTER_HEALTH", "onDetachedFromActivity: channel is null")
       return
     }
     activity = null
