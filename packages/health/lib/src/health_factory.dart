@@ -110,7 +110,7 @@ class HealthFactory {
     // on Android, if BMI is requested, then also ask for weight and height
     if (_platformType == PlatformType.ANDROID) _handleBMI(mTypes, mPermissions);
 
-    List<String> keys = mTypes.map((e) => _enumToString(e)).toList();
+    List<String> keys = mTypes.map((e) => healthEnumToString(e)).toList();
     final bool? isAuthorized =
         await _channel.invokeMethod('requestAuthorization', {'types': keys, 'permissions': mPermissions});
     return isAuthorized ?? false;
@@ -240,15 +240,19 @@ class HealthFactory {
   }
 
   /// Fetch a list of health data points based on [types].
-  Future<List<HealthDataPoint>> getHealthDataFromTypes(DateTime startTime, DateTime endTime, List<HealthDataType> types,
-      [bool deduplicates = true]) async {
-    List<HealthDataPoint> dataPoints = await _prepareQuery(startTime, endTime, types, deduplicates);
+  Future<List<HealthDataPoint>> getHealthDataFromTypes(
+    DateTime startTime, DateTime endTime, List<HealthDataType> types,
+    {bool deduplicates = true, bool? threaded
+  }) async {
+    List<HealthDataPoint> dataPoints = await _prepareQuery(
+      startTime, endTime, types, deduplicates, threaded);
     return dataPoints;
   }
 
   /// Prepares a query, i.e. checks if the types are available, etc.
   Future<List<HealthDataPoint>> _prepareQuery(
-    DateTime startTime, DateTime endTime, List<HealthDataType> dataType, bool deduplicate
+    DateTime startTime, DateTime endTime, List<HealthDataType> dataType,
+    bool deduplicate, [bool? threaded]
   ) async {
     // If not implemented on platform, throw an exception
     for (var type in dataType) {
@@ -263,12 +267,14 @@ class HealthFactory {
       return _computeAndroidBMI(startTime, endTime);
     }
 
-
-    return await _dataQuery(startTime, endTime, dataType, deduplicate);
+    return await _dataQuery(startTime, endTime, dataType, deduplicate, threaded);
   }
 
   /// The main function for fetching health data
-  Future<List<HealthDataPoint>> _dataQuery(DateTime startTime, DateTime endTime, List<HealthDataType> dataType, bool deduplicate) async {
+  Future<List<HealthDataPoint>> _dataQuery(
+    DateTime startTime, DateTime endTime, List<HealthDataType> dataType,
+    bool deduplicate, bool? threaded,
+  ) async {
     var results = await Future.wait<Map<String, dynamic>?>(dataType.map((e) async {
       final args = <String, dynamic>{
         'dataTypeKey': e.typeToString(),
@@ -299,8 +305,9 @@ class HealthFactory {
     const thresHold = 100;
     // If the no. of data points are larger than the threshold,
     // call the compute method to spawn an Isolate to do the parsing in a separate thread.
-    if (size > thresHold) return compute(_parse, r);
-    return _parse(r);
+    threaded ??= size > thresHold;
+    
+    return threaded ? await compute(_parse, r) : _parse(r);
   }
 
   static List<HealthDataPoint> _parse(List<Map<String, dynamic>> messages) {
@@ -405,9 +412,9 @@ class HealthFactory {
       'startTime': start.millisecondsSinceEpoch,
       'endTime': end.millisecondsSinceEpoch,
       'totalEnergyBurned': totalEnergyBurned,
-      'totalEnergyBurnedUnit': _enumToString(totalEnergyBurnedUnit),
+      'totalEnergyBurnedUnit': healthEnumToString(totalEnergyBurnedUnit),
       'totalDistance': totalDistance,
-      'totalDistanceUnit': _enumToString(totalDistanceUnit),
+      'totalDistanceUnit': healthEnumToString(totalDistanceUnit),
     };
     final success = await _channel.invokeMethod('writeWorkoutData', args);
     return success ?? false;
