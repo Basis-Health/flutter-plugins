@@ -324,6 +324,7 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   }
 
   private fun writeData(call: MethodCall, result: Result) {
+    Log.d("FLUTTER_HEALTH", "writeData")
 
     if (activity == null) {
       result.success(false)
@@ -391,6 +392,8 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   }
 
   private fun writeWorkoutData(call: MethodCall, result: Result) {
+    Log.d("FLUTTER_HEALTH", "writeWorkoutData")
+
     if (activity == null) {
       result.success(false)
       return
@@ -524,6 +527,8 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
 
 
   private fun getData(call: MethodCall, result: Result) {
+    Log.d("FLUTTER_HEALTH", "getData() called with: call = [$call], result = [$result]")
+
     if (activity == null) {
       result.success(null)
       return
@@ -638,8 +643,9 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
   private fun errHandler(result: Result) = OnFailureListener { exception ->
     activity!!.runOnUiThread { result.success(null) }
     Log.i("FLUTTER_HEALTH::ERROR", exception.message ?: "unknown error")
-    Log.i("FLUTTER_HEALTH::ERROR", exception.stackTrace.toString())
+    Log.i("FLUTTER_HEALTH::ERROR", Log.getStackTraceString(exception))
   }
+
   private fun sleepDataHandler(type: String, result: Result) =
     OnSuccessListener { response: SessionReadResponse ->
       val healthData: MutableList<Map<String, Any?>> = mutableListOf()
