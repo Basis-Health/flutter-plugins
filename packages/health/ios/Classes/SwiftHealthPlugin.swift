@@ -20,6 +20,8 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
             checkIfHealthDataAvailable(call: call, result: result)
         case .getData:
             try! getData(call: call, result: result)
+        case .getBatchData:
+            try! getBatchData(call: call, result: result)
         case .requestAuthorization:
             try! requestAuthorization(call: call, result: result)
         case .getTotalStepsInInterval:
@@ -141,9 +143,28 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
               let startTime = (arguments["startTime"] as? NSNumber),
               let endTime = (arguments["endTime"] as? NSNumber)
         else { throw PluginError(message: "Invalid Arguments") }
-        // TODO: Return Data as Dictionary
         repository.getData(
             type: dataType,
+            unit: dataUnit,
+            startTime: Date(timeIntervalSince1970: startTime.doubleValue / 1000),
+            endTime: Date(timeIntervalSince1970: endTime.doubleValue / 1000),
+            limit: (arguments["limit"] as? Int) ?? HKObjectQueryNoLimit
+        ) { success in
+            let data = success.map({ $0.toData() })
+            DispatchQueue.main.async { result(data) }
+        }
+    }
+    
+    func getBatchData(call: FlutterMethodCall, result: @escaping FlutterResult) throws {
+        guard let arguments = call.arguments as? NSDictionary,
+              let dataTypesKeys = (arguments["dataTypesKey"] as? [String]),
+              let dataUnitKey = (arguments["dataUnitKey"] as? String),
+              let dataUnit = SHPUnit(rawValue: dataUnitKey),
+              let startTime = (arguments["startTime"] as? NSNumber),
+              let endTime = (arguments["endTime"] as? NSNumber)
+        else { throw PluginError(message: "Invalid Arguments") }
+        repository.getBatchData(
+            types: dataTypesKeys.compactMap({ SHPSampleType(rawValue: $0) }),
             unit: dataUnit,
             startTime: Date(timeIntervalSince1970: startTime.doubleValue / 1000),
             endTime: Date(timeIntervalSince1970: endTime.doubleValue / 1000),

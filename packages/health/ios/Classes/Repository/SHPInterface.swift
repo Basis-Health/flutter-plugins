@@ -10,6 +10,15 @@ import Foundation
 protocol SHPInterface {
     func checkIfHealthDataAvailable() -> Bool
     
+    func getBatchData(
+        types: [SHPSampleType],
+        unit: SHPUnit,
+        startTime: Date,
+        endTime: Date,
+        limit: Int,
+        completion: @escaping ([SHPQueryResult]) -> Void
+    )
+    
     func getData(
         type: SHPSampleType,
         unit: SHPUnit,

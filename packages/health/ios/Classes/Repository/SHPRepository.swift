@@ -15,6 +15,88 @@ class SHPRepository: SHPInterface {
         return HKHealthStore.isHealthDataAvailable()
     }
     
+    func getBatchData(
+        types: [SHPSampleType],
+        unit: SHPUnit,
+        startTime: Date,
+        endTime: Date,
+        limit: Int,
+        completion: @escaping ([SHPQueryResult]) -> Void
+    ) {
+        let predicate = HKQuery.predicateForSamples(
+            withStart: startTime,
+            end: endTime,
+            options: .strictStartDate
+        )
+        let sortDescriptor = NSSortDescriptor(
+            key: HKSampleSortIdentifierEndDate,
+            ascending: false
+        )
+        
+        if #available(iOS 15.0, *) {
+            getBatchQueryUsingDescriptors(
+                sampleTypes: types.compactMap({ $0.sampleType }),
+                unit: unit,
+                limit: limit,
+                predicate: predicate,
+                sortDescriptors: [sortDescriptor],
+                completion: completion
+            )
+        } else {
+            getBatchQueryUsingQueues(
+                sampleTypes: types,
+                unit: unit,
+                limit: limit,
+                startTime: startTime,
+                endTime: endTime,
+                completion: completion
+            )
+        }
+    }
+    
+    @available(iOS 15.0, *)
+    private func getBatchQueryUsingDescriptors(
+        sampleTypes: [HKSampleType],
+        unit: SHPUnit,
+        limit: Int,
+        predicate: NSPredicate,
+        sortDescriptors: [NSSortDescriptor],
+        completion: @escaping ([SHPQueryResult]) -> Void
+    ) {
+        let descriptors = sampleTypes.map({ HKQueryDescriptor(sampleType: $0, predicate: predicate) })
+        let query = HKSampleQuery(
+            queryDescriptors: descriptors,
+            limit: limit,
+            sortDescriptors: sortDescriptors
+        ) { query, samplesOrNil, _ in
+            let samples = self.processSamples(samplesOrNil ?? [], unit: unit)
+            completion(samples)
+        }
+        
+        store.execute(query)
+    }
+    
+    private func getBatchQueryUsingQueues(
+        sampleTypes: [SHPSampleType],
+        unit: SHPUnit,
+        limit: Int,
+        startTime: Date,
+        endTime: Date,
+        completion: @escaping ([SHPQueryResult]) -> Void
+    ) {
+        let group = DispatchGroup()
+        var results: [SHPQueryResult] = []
+        for type in sampleTypes {
+            group.enter()
+            getData(type: type, unit: unit, startTime: startTime, endTime: endTime, limit: limit) { samples in
+                results.append(contentsOf: samples)
+                group.leave()
+            }
+        }
+        
+        group.notify(queue: .main) { completion(results) }
+    }
+    
     func getData(
         type: SHPSampleType,
         unit: SHPUnit,
