@@ -249,6 +249,20 @@ class HealthFactory {
     return dataPoints;
   }
 
+  Future<List<HealthDataPoint>> getBatchHealthDataFromTypes(
+      DateTime startTime, DateTime endTime, List<HealthDataQuery> queries,
+      {bool deduplicates = true, bool? threaded
+      }) async {
+    validateQuery(queries.map((e) => e.type).toList());
+    return await _batchDataQuery(
+      startTime,
+      endTime,
+      queries,
+      deduplicates,
+      threaded,
+    );
+  }
+
   /// Prepares a query, i.e. checks if the types are available, etc.
   Future<List<HealthDataPoint>> _prepareQuery(
     DateTime startTime, DateTime endTime, List<HealthDataType> dataType,
@@ -268,6 +282,15 @@ class HealthFactory {
     }
 
     return await _dataQuery(startTime, endTime, dataType, deduplicate, threaded);
+  }
+
+  void validateQuery(List<HealthDataType> dataType) {
+    // If not implemented on platform, throw an exception
+    for (var type in dataType) {
+      if (!isDataTypeAvailable(type)) {
+        throw HealthException(dataType, 'Not available on platform $_platformType');
+      }
+    }
   }
 
   /// The main function for fetching health data
@@ -307,6 +330,41 @@ class HealthFactory {
     // call the compute method to spawn an Isolate to do the parsing in a separate thread.
     threaded ??= size > thresHold;
     
+    return threaded ? await compute(_parse, r) : _parse(r);
+  }
+
+  Future<List<HealthDataPoint>> _batchDataQuery(
+      DateTime startTime,
+      DateTime endTime,
+      List<HealthDataQuery> queries,
+      bool deduplicate,
+      bool? threaded,
+      ) async {
+    final args = <String, dynamic>{
+      'dataTypes': queries.map((e) => e.toJson()).toList(),
+      'startTime': startTime.millisecondsSinceEpoch,
+      'endTime': endTime.millisecondsSinceEpoch,
+    };
+    var results = await _channel.invokeMethod('getBatchData') as List<dynamic>;
+    results = results.map((e) {
+      var data = e as Map<String, dynamic>;
+      data['deduplicate'] = deduplicate;
+      return data;
+    }).toList(growable: false);
+    // removes all unsuccessful queries
+    results.removeWhere((element) => element == null);
+    var r = results.cast<Map<String, dynamic>>();
+
+    int size = 0;
+    for (var item in r) {
+      size += item.length;
+
+    }
+    const thresHold = 100;
+    // If the no. of data points are larger than the threshold,
+    // call the compute method to spawn an Isolate to do the parsing in a separate thread.
+    threaded ??= size > thresHold;
+
     return threaded ? await compute(_parse, r) : _parse(r);
   }
 
