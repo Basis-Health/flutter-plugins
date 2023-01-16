@@ -8,7 +8,7 @@
 import Foundation
 import HealthKit
 
-enum SHPSampleType: String {
+enum SHPSampleType: String, CaseIterable, Codable {
     case ACTIVE_ENERGY_BURNED
     case AUDIOGRAM
     case BASAL_ENERGY_BURNED
@@ -44,6 +44,7 @@ enum SHPSampleType: String {
     case EXERCISE_TIME
     case WORKOUT
     case HEADACHE
+    case UNKNOWN
     
     var sampleType: HKSampleType? {
         switch self {
@@ -118,5 +119,9 @@ enum SHPSampleType: String {
         default:
             return nil
         }
+    }
+    
+    static func fromHKType( _ type: HKSampleType) -> SHPSampleType {
+        return SHPSampleType.allCases.first(where: { $0.sampleType == type }) ?? .UNKNOWN
     }
 }

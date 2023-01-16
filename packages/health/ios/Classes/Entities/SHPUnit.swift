@@ -8,7 +8,7 @@
 import Foundation
 import HealthKit
 
-enum SHPUnit: String {
+enum SHPUnit: String, Codable {
     case GRAM
     case KILOGRAM
     case OUNCE

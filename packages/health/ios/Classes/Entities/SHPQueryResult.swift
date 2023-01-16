@@ -14,13 +14,15 @@ class SHPQueryResult {
     var dateTo: Date
     var sourceId: String
     var sourceName: String
+    var dataType: SHPSampleType
     
-    init(uuid: String, dateFrom: Date, dateTo: Date, sourceId: String, sourceName: String) {
+    init(uuid: String, dateFrom: Date, dateTo: Date, sourceId: String, sourceName: String, dataType: SHPSampleType) {
         self.uuid = uuid
         self.dateFrom = dateFrom
         self.dateTo = dateTo
         self.sourceId = sourceId
         self.sourceName = sourceName
+        self.dataType = dataType
     }
     
     func toData() -> NSDictionary { return [:] }
@@ -29,13 +31,14 @@ class SHPQueryResult {
 class SHPQuantitySample: SHPQueryResult {
     var value: Double = 0
     
-    init(sample: HKQuantitySample, unit: SHPUnit) {
+    init(sample: HKQuantitySample, unit: SHPUnit, sampleType: SHPSampleType) {
         super.init(
             uuid: sample.uuid.uuidString,
             dateFrom: sample.startDate,
             dateTo: sample.endDate,
             sourceId: sample.sourceRevision.source.bundleIdentifier,
-            sourceName: sample.sourceRevision.source.name
+            sourceName: sample.sourceRevision.source.name,
+            dataType: sampleType
         )
         self.value = sample.quantity.doubleValue(for: unit.hkUnit)
     }
@@ -55,13 +58,14 @@ class SHPQuantitySample: SHPQueryResult {
 class SHPCategorySample: SHPQueryResult {
     var value: Int = 0
     
-    init(sample: HKCategorySample, unit: SHPUnit) {
+    init(sample: HKCategorySample, unit: SHPUnit, sampleType: SHPSampleType) {
         super.init(
             uuid: sample.uuid.uuidString,
             dateFrom: sample.startDate,
             dateTo: sample.endDate,
             sourceId: sample.sourceRevision.source.bundleIdentifier,
-            sourceName: sample.sourceRevision.source.name
+            sourceName: sample.sourceRevision.source.name,
+            dataType: sampleType
         )
         self.value = sample.value
     }
@@ -85,13 +89,14 @@ class SHPWorkout: SHPQueryResult {
     var totalDistance: Double?
     let totalDistanceUnit = SHPUnit.METER
     
-    init(sample: HKWorkout) {
+    init(sample: HKWorkout, sampleType: SHPSampleType) {
         super.init(
             uuid: sample.uuid.uuidString,
             dateFrom: sample.startDate,
             dateTo: sample.endDate,
             sourceId: sample.sourceRevision.source.bundleIdentifier,
-            sourceName: sample.sourceRevision.source.name
+            sourceName: sample.sourceRevision.source.name,
+            dataType: sampleType
         )
         self.workoutActivityType = SHPActivityType.allCases.first(
             where: { $0.activity == sample.workoutActivityType }
@@ -121,13 +126,14 @@ class SHPAudiogramSample: SHPQueryResult {
     var leftEarSensitivities: [Double] = []
     var rightEarSensitivities: [Double] = []
     
-    init(sample: HKAudiogramSample) {
+    init(sample: HKAudiogramSample, sampleType: SHPSampleType) {
         super.init(
             uuid: sample.uuid.uuidString,
             dateFrom: sample.startDate,
             dateTo: sample.endDate,
             sourceId: sample.sourceRevision.source.bundleIdentifier,
-            sourceName: sample.sourceRevision.source.name
+            sourceName: sample.sourceRevision.source.name,
+            dataType: sampleType
         )
         self.frequencies = sample.sensitivityPoints.map({
             $0.frequency.doubleValue(for: .hertz())
@@ -151,5 +157,11 @@ class SHPAudiogramSample: SHPQueryResult {
             "source_id": sourceId,
             "source_name": sourceName
         ]
+    }
+}
+
+extension SHPQueryResult {
+    func toBatchDataFormat() -> NSDictionary {
+        return [ "dataType": dataType.rawValue, "dataPoints": toData()]
     }
 }

@@ -16,8 +16,7 @@ class SHPRepository: SHPInterface {
     }
     
     func getBatchData(
-        types: [SHPSampleType],
-        unit: SHPUnit,
+        types: [SHPSampleQuery],
         startTime: Date,
         endTime: Date,
         limit: Int,
@@ -35,8 +34,7 @@ class SHPRepository: SHPInterface {
         
         if #available(iOS 15.0, *) {
             getBatchQueryUsingDescriptors(
-                sampleTypes: types.compactMap({ $0.sampleType }),
-                unit: unit,
+                sampleTypes: types,
                 limit: limit,
                 predicate: predicate,
                 sortDescriptors: [sortDescriptor],
@@ -45,7 +43,6 @@ class SHPRepository: SHPInterface {
         } else {
             getBatchQueryUsingQueues(
                 sampleTypes: types,
-                unit: unit,
                 limit: limit,
                 startTime: startTime,
                 endTime: endTime,
@@ -56,20 +53,21 @@ class SHPRepository: SHPInterface {
     
     @available(iOS 15.0, *)
     private func getBatchQueryUsingDescriptors(
-        sampleTypes: [HKSampleType],
-        unit: SHPUnit,
+        sampleTypes: [SHPSampleQuery],
         limit: Int,
         predicate: NSPredicate,
         sortDescriptors: [NSSortDescriptor],
         completion: @escaping ([SHPQueryResult]) -> Void
     ) {
-        let descriptors = sampleTypes.map({ HKQueryDescriptor(sampleType: $0, predicate: predicate) })
+        let descriptors = sampleTypes
+            .compactMap({ $0.type.sampleType })
+            .map({ HKQueryDescriptor(sampleType: $0, predicate: predicate) })
         let query = HKSampleQuery(
             queryDescriptors: descriptors,
             limit: limit,
             sortDescriptors: sortDescriptors
         ) { query, samplesOrNil, _ in
-            let samples = self.processSamples(samplesOrNil ?? [], unit: unit)
+            let samples = self.process(healthSamples: samplesOrNil ?? [], sampleUnits: sampleTypes)
             completion(samples)
         }
         
@@ -77,8 +75,7 @@ class SHPRepository: SHPInterface {
     }
     
     private func getBatchQueryUsingQueues(
-        sampleTypes: [SHPSampleType],
-        unit: SHPUnit,
+        sampleTypes: [SHPSampleQuery],
         limit: Int,
         startTime: Date,
         endTime: Date,
@@ -88,7 +85,7 @@ class SHPRepository: SHPInterface {
         var results: [SHPQueryResult] = []
         for type in sampleTypes {
             group.enter()
-            getData(type: type, unit: unit, startTime: startTime, endTime: endTime, limit: limit) { samples in
+            getData(type: type.type, unit: type.unit, startTime: startTime, endTime: endTime, limit: limit) { samples in
                 results.append(contentsOf: samples)
                 group.leave()
             }
@@ -121,26 +118,41 @@ class SHPRepository: SHPInterface {
             limit: limit,
             sortDescriptors: [sortDescriptor]
         ) { x, samplesOrNil, error in
-            let samples = self.processSamples(samplesOrNil ?? [], unit: unit)
+            let samples = self.process(
+                healthSamples: samplesOrNil ?? [],
+                sampleUnits: [SHPSampleQuery(type: type, unit: unit)]
+            )
             completion(samples)
         }
 
         store.execute(query)
     }
     
-    private func processSamples(_ samples: [HKSample], unit: SHPUnit) -> [SHPQueryResult] {
-        switch samples {
-        case let (samples as [HKQuantitySample]) as Any:
-            return samples.map { SHPQuantitySample(sample: $0, unit: unit) }
-        case let (samplesCategory as [HKCategorySample]) as Any:
-            return samplesCategory.map { SHPCategorySample(sample: $0, unit: unit) }
-        case let (samplesWorkout as [HKWorkout]) as Any:
-            return samplesWorkout.map { SHPWorkout(sample: $0) }
-        case let (samplesAudiogram as [HKAudiogramSample]) as Any:
-            return samplesAudiogram.map { SHPAudiogramSample(sample: $0) }
-        default:
-            return []
-        }
+    private func process(
+        healthSamples: [HKSample],
+        sampleUnits: [SHPSampleQuery]
+    ) -> [SHPQueryResult] {
+        return healthSamples.compactMap({ sample in
+            switch sample {
+            case let (sample as HKQuantitySample) as Any:
+                return SHPQuantitySample(
+                    sample: sample,
+                    unit: sampleUnits.unitForType(sample.sampleType),
+                    sampleType: SHPSampleType.fromHKType(sample.sampleType)
+                )
+            case let (sample as HKCategorySample) as Any:
+                return SHPCategorySample(
+                    sample: sample,
+                    unit: sampleUnits.unitForType(sample.sampleType),
+                    sampleType: SHPSampleType.fromHKType(sample.sampleType)
+                )
+            case let (sample as HKWorkout) as Any:
+                return SHPWorkout(sample: sample, sampleType: SHPSampleType.fromHKType(sample.sampleType))
+            case let (sample as HKAudiogramSample) as Any:
+                return SHPAudiogramSample(sample: sample, sampleType: SHPSampleType.fromHKType(sample.sampleType))
+            default: return nil
+            }
+        })
     }
     
     func getTotalStepsInInterval(

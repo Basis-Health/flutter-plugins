@@ -157,15 +157,14 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
     
     func getBatchData(call: FlutterMethodCall, result: @escaping FlutterResult) throws {
         guard let arguments = call.arguments as? NSDictionary,
-              let dataTypesKeys = (arguments["dataTypesKey"] as? [String]),
-              let dataUnitKey = (arguments["dataUnitKey"] as? String),
-              let dataUnit = SHPUnit(rawValue: dataUnitKey),
+              let sampleTypesValue = arguments.value(forKey: "dataTypes"),
+              let sampleTypesData = try? JSONSerialization.data(withJSONObject: sampleTypesValue),
+              let sampleTypes = try? JSONDecoder().decode([SHPSampleQuery].self, from: sampleTypesData),
               let startTime = (arguments["startTime"] as? NSNumber),
               let endTime = (arguments["endTime"] as? NSNumber)
         else { throw PluginError(message: "Invalid Arguments") }
         repository.getBatchData(
-            types: dataTypesKeys.compactMap({ SHPSampleType(rawValue: $0) }),
-            unit: dataUnit,
+            types: sampleTypes,
             startTime: Date(timeIntervalSince1970: startTime.doubleValue / 1000),
             endTime: Date(timeIntervalSince1970: endTime.doubleValue / 1000),
             limit: (arguments["limit"] as? Int) ?? HKObjectQueryNoLimit
