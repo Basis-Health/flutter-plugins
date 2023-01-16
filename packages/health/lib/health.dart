@@ -10,5 +10,5 @@ import 'package:flutter/services.dart';
 part 'src/data_types.dart';
 part 'src/functions.dart';
 part 'src/health_data_point.dart';
-part 'src/health_value_types.dart';
 part 'src/health_factory.dart';
+part 'src/health_value_types.dart';
