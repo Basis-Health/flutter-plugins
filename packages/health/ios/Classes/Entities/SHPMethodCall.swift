@@ -10,8 +10,9 @@ import HealthKit
 
 enum SHPMethodCall: String {
     case checkIfHealthDataAvailable
-    case getData
     case getBatchData
+    case getData
+    case getDevices
     case requestAuthorization
     case getTotalStepsInInterval
     case writeData

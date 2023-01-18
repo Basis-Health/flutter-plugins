@@ -128,6 +128,18 @@ class SHPRepository: SHPInterface {
         store.execute(query)
     }
     
+    func getDevices(completion: @escaping ([SHPDevice]) -> Void) {
+        getBatchData(
+            types: SHPSampleType.allCases.map({ SHPSampleQuery(type: $0) }),
+            startTime: Date().addingTimeInterval(86400 * -100),
+            endTime: Date(),
+            limit: HKObjectQueryNoLimit
+        ) { results in
+            let devices = results.map({ SHPDevice(result: $0) })
+            completion(devices.groupedBySourceId())
+        }
+    }
+    
     private func process(
         healthSamples: [HKSample],
         sampleUnits: [SHPSampleQuery]

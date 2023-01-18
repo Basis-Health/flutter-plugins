@@ -22,6 +22,8 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
             try! getData(call: call, result: result)
         case .getBatchData:
             try! getBatchData(call: call, result: result)
+        case .getDevices:
+            getDevices(call: call, result: result)
         case .requestAuthorization:
             try! requestAuthorization(call: call, result: result)
         case .getTotalStepsInInterval:
@@ -184,5 +186,11 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
         ) { steps in
             DispatchQueue.main.async { result(steps) }
         }
+    }
+    
+    func getDevices(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        repository.getDevices(completion: { devices in
+            DispatchQueue.main.async { result(devices.toData()) }
+        })
     }
 }

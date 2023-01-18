@@ -28,6 +28,8 @@ protocol SHPInterface {
         completion: @escaping ([SHPQueryResult]) -> Void
     )
     
+    func getDevices(completion: @escaping ([SHPDevice]) -> Void)
+    
     func getTotalStepsInInterval(startTime: Date, endTime: Date, completion: @escaping (Int) -> Void)
 
     func hasPermissions(types: [SHPSampleType], permissions: [Int]) -> Bool
