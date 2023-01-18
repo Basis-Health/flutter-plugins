@@ -6,9 +6,8 @@ class HealthDataQuery {
 
   HealthDataQuery({required this.type, this.unit});
 
-  /// Converts the [HealthDataQuery] to a json object
   Map<String, dynamic> toJson() => {
-        'data_type': type.typeToString(),
+        'type': type.typeToString(),
         'unit': unit?.typeToString(),
   };
 }

@@ -250,10 +250,12 @@ class HealthFactory {
   }
 
   Future<List<HealthDataPoint>> getBatchHealthDataFromTypes(
-      DateTime startTime, DateTime endTime, List<HealthDataQuery> queries,
+      DateTime startTime, DateTime endTime, List<HealthDataType> types,
       {bool deduplicates = true, bool? threaded
       }) async {
-    validateQuery(queries.map((e) => e.type).toList());
+    validateQuery(types.toList());
+    final queries = types.map((e) => HealthDataQuery(type: e, unit: dataTypeToUnit[e]!)
+    ).toList();
     return await _batchDataQuery(
       startTime,
       endTime,
@@ -345,12 +347,14 @@ class HealthFactory {
       'startTime': startTime.millisecondsSinceEpoch,
       'endTime': endTime.millisecondsSinceEpoch,
     };
-    var results = await _channel.invokeMethod('getBatchData') as List<dynamic>;
+    var results = await _channel.invokeMethod('getBatchData', args) as List<dynamic>;
     results = results.map((e) {
-      var data = e as Map<String, dynamic>;
+      var data = Map<String, dynamic>.from(e);
+      final dataTypeString = data['dataType'] as String;
+      data['dataType'] = HealthDataType.fromTypeString(dataTypeString);
       data['deduplicate'] = deduplicate;
       return data;
-    }).toList(growable: false);
+    }).toList();
     // removes all unsuccessful queries
     results.removeWhere((element) => element == null);
     var r = results.cast<Map<String, dynamic>>();
@@ -358,7 +362,6 @@ class HealthFactory {
     int size = 0;
     for (var item in r) {
       size += item.length;
-
     }
     const thresHold = 100;
     // If the no. of data points are larger than the threshold,

@@ -160,8 +160,12 @@ class SHPAudiogramSample: SHPQueryResult {
     }
 }
 
-extension SHPQueryResult {
-    func toBatchDataFormat() -> NSDictionary {
-        return [ "dataType": dataType.rawValue, "dataPoints": toData()]
+extension Array where Element == SHPQueryResult {
+    func groupedBySampleType() -> [SHPSampleType: [SHPQueryResult]] {
+        return Dictionary(grouping: self, by: { $0.dataType })
+    }
+    
+    func groupedBySampleTypeData() -> [NSDictionary] {
+        return groupedBySampleType().map({ ["dataType": $0.key.rawValue, "dataPoints": $0.value] })
     }
 }

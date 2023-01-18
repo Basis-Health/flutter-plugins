@@ -169,7 +169,7 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
             endTime: Date(timeIntervalSince1970: endTime.doubleValue / 1000),
             limit: (arguments["limit"] as? Int) ?? HKObjectQueryNoLimit
         ) { success in
-            let data = success.map({ $0.toData() })
+            let data = success.groupedBySampleTypeData()
             DispatchQueue.main.async { result(data) }
         }
     }
