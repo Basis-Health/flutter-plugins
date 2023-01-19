@@ -63,7 +63,7 @@ class SHPRepository: SHPInterface {
             .compactMap({ $0.type.sampleType })
             .map({ HKQueryDescriptor(sampleType: $0, predicate: predicate) })
         let query = HKSampleQuery(
-            queryDescriptors: descriptors,
+            queryDescriptors: Array(Set(descriptors)),
             limit: limit,
             sortDescriptors: sortDescriptors
         ) { query, samplesOrNil, _ in

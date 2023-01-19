@@ -54,6 +54,8 @@ enum SHPUnit: String, Codable {
     case PERCENT
     case BEATS_PER_MINUTE
     case MILLIGRAM_PER_DECILITER
+    case SLEEP
+    case HEADACHE
     case UNKNOWN_UNIT
     case NO_UNIT
     
@@ -157,9 +159,7 @@ enum SHPUnit: String, Codable {
             return HKUnit.init(from: "count/min")
         case .MILLIGRAM_PER_DECILITER:
             return HKUnit.init(from: "mg/dL")
-        case .UNKNOWN_UNIT:
-            return HKUnit.init(from: "")
-        case .NO_UNIT:
+        default:
             return HKUnit.init(from: "")
         }
     }

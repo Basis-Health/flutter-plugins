@@ -166,6 +166,6 @@ extension Array where Element == SHPQueryResult {
     }
     
     func groupedBySampleTypeData() -> [NSDictionary] {
-        return groupedBySampleType().map({ ["dataType": $0.key.rawValue, "dataPoints": $0.value] })
+        return groupedBySampleType().map({ ["dataType": $0.key.rawValue, "dataPoints": $0.value.map({ $0.toData() })] })
     }
 }
