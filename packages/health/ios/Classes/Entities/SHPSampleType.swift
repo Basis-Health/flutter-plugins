@@ -92,6 +92,12 @@ enum SHPSampleType: String, CaseIterable, Codable {
             return .quantityType(forIdentifier: .heartRateVariabilitySDNN)
         case .HEIGHT:
             return .quantityType(forIdentifier: .height)
+        case .HEADACHE:
+            if #available(iOS 13.6, *) {
+                return .categoryType(forIdentifier: .headache)
+            } else {
+                return nil
+            }
         case .RESTING_HEART_RATE:
             return .quantityType(forIdentifier: .restingHeartRate)
         case .STEPS:
