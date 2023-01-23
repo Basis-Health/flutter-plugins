@@ -34,7 +34,7 @@ class SHPRepository: SHPInterface {
         
         if #available(iOS 15.0, *) {
             getBatchQueryUsingDescriptors(
-                sampleTypes: types,
+                sampleTypes: types.valid(),
                 limit: limit,
                 predicate: predicate,
                 sortDescriptors: [sortDescriptor],
@@ -42,7 +42,7 @@ class SHPRepository: SHPInterface {
             )
         } else {
             getBatchQueryUsingQueues(
-                sampleTypes: types,
+                sampleTypes: types.valid(),
                 limit: limit,
                 startTime: startTime,
                 endTime: endTime,
@@ -124,13 +124,12 @@ class SHPRepository: SHPInterface {
             )
             completion(samples)
         }
-
         store.execute(query)
     }
     
     func getDevices(completion: @escaping ([SHPDevice]) -> Void) {
         getBatchData(
-            types: SHPSampleType.allCases.map({ SHPSampleQuery(type: $0) }),
+            types: SHPSampleType.allCases.map({ SHPSampleQuery.fromType($0) }).valid(),
             startTime: Date().addingTimeInterval(86400 * -100),
             endTime: Date(),
             limit: HKObjectQueryNoLimit

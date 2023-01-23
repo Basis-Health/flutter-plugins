@@ -265,6 +265,12 @@ class HealthFactory {
     );
   }
 
+  Future<List<HealthDevice>> getDevices() {
+    return _channel.invokeMethod('getDevices').then((value) {
+      return (value as List).map((e) => HealthDevice.fromMap(e)).toList();
+    });
+  }
+
   /// Prepares a query, i.e. checks if the types are available, etc.
   Future<List<HealthDataPoint>> _prepareQuery(
     DateTime startTime, DateTime endTime, List<HealthDataType> dataType,

@@ -13,10 +13,18 @@ struct SHPSampleQuery: Codable {
     var unit: SHPUnit = .NO_UNIT
     
     func isType(_ hkType: HKSampleType) -> Bool { type.sampleType == hkType }
+    
+    static func fromType( _ type: SHPSampleType) -> SHPSampleQuery {
+        return .init(type: type, unit: type.unit)
+    }
 }
 
 extension Array where Element == SHPSampleQuery {
     func unitForType(_ sample: HKSampleType) -> SHPUnit {
         return self.first(where: { $0.isType(sample) })?.unit ?? .NO_UNIT
+    }
+    
+    func valid() -> [SHPSampleQuery] {
+        return filter({ $0.type.sampleType != nil })
     }
 }

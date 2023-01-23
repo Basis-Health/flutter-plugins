@@ -23,7 +23,7 @@ class SHPDevice {
     func toData() -> NSDictionary {
         return [
             "sourceId": sourceId,
-            "sourceNames": sourceNames,
+            "sourceNames": Array(sourceNames),
             "lastSynced": lastSynced.timeIntervalSince1970
         ]
     }
