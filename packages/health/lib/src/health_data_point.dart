@@ -11,10 +11,19 @@ class HealthDataPoint {
   PlatformType _platform;
   String _sourceId;
   String _sourceName;
+  String? _timezone;
 
   HealthDataPoint(
-    this._value, this._type, this._unit, this._dateFrom, this._dateTo, this._platform,
-    this._sourceId, this._sourceName);
+    this._value,
+    this._type,
+    this._unit,
+    this._dateFrom,
+    this._dateTo,
+    this._platform,
+    this._sourceId,
+    this._sourceName,
+    this._timezone,
+  );
 
   /// Converts a json object to the [HealthDataPoint]
   factory HealthDataPoint.fromJson(json) {
@@ -29,14 +38,16 @@ class HealthDataPoint {
     }
 
     return HealthDataPoint(
-        value,
-        dataType,
-        HealthDataUnit.fromTypeString(json['unit']),
-        DateTime.parse(json['date_from']),
-        DateTime.parse(json['date_to']),
-        platformTypeJsonValueReverse[json['platform_type']]!,
-        json['source_id'],
-        json['source_name']);
+      value,
+      dataType,
+      HealthDataUnit.fromTypeString(json['unit']),
+      DateTime.parse(json['date_from']),
+      DateTime.parse(json['date_to']),
+      platformTypeJsonValueReverse[json['platform_type']]!,
+      json['source_id'],
+      json['source_name'],
+      json['timezone'],
+    );
   }
 
   /// Converts the [HealthDataPoint] to a json object
@@ -48,7 +59,8 @@ class HealthDataPoint {
         'date_to': dateTo.toIso8601String(),
         'platform_type': PlatformTypeJsonValue[platform],
         'source_id': sourceId,
-        'source_name': sourceName
+        'source_name': sourceName,
+        'timezone': _timezone,
       };
 
   @override
@@ -60,7 +72,8 @@ class HealthDataPoint {
     dataType: $type,
     platform: $platform,
     sourceId: $sourceId,
-    sourceName: $sourceName""";
+    sourceName: $sourceName,
+    timezone: $_timezone""";
 
   // / The quantity value of the data point
   HealthValue get value => _value;
@@ -92,21 +105,33 @@ class HealthDataPoint {
   /// The name of the source from which the data point was fetched.
   String get sourceName => _sourceName;
 
+  String? get timezone => _timezone;
+
   @override
   bool operator ==(Object o) {
-    return
-      identical(this, o) ||
+    return identical(this, o) ||
         o is HealthDataPoint &&
-        this.value == o.value &&
-        this.unit == o.unit &&
-        this.dateFrom == o.dateFrom &&
-        this.dateTo == o.dateTo &&
-        this.type == o.type &&
-        this.platform == o.platform &&
-        this.sourceId == o.sourceId &&
-        this.sourceName == o.sourceName;
+            this.value == o.value &&
+            this.unit == o.unit &&
+            this.dateFrom == o.dateFrom &&
+            this.dateTo == o.dateTo &&
+            this.type == o.type &&
+            this.platform == o.platform &&
+            this.sourceId == o.sourceId &&
+            this.sourceName == o.sourceName &&
+            this.timezone == o.timezone;
   }
 
   @override
-  int get hashCode => Object.hash(value, unit, dateFrom, dateTo, type, platform, sourceId, sourceName);
+  int get hashCode => Object.hash(
+        value,
+        unit,
+        dateFrom,
+        dateTo,
+        type,
+        platform,
+        sourceId,
+        sourceName,
+        timezone,
+      );
 }

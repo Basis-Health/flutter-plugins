@@ -15,17 +15,27 @@ class SHPQueryResult {
     var sourceId: String
     var sourceName: String
     var dataType: SHPSampleType
+    var timezone: String?
     
-    init(uuid: String, dateFrom: Date, dateTo: Date, sourceId: String, sourceName: String, dataType: SHPSampleType) {
+    init(
+        uuid: String,
+        dateFrom: Date,
+        dateTo: Date,
+        sourceId: String,
+        sourceName: String,
+        dataType: SHPSampleType,
+        timezone: String? = nil
+    ) {
         self.uuid = uuid
         self.dateFrom = dateFrom
         self.dateTo = dateTo
         self.sourceId = sourceId
         self.sourceName = sourceName
         self.dataType = dataType
+        self.timezone = timezone
     }
     
-    func toData() -> NSDictionary { return [:] }
+    func toData() -> NSDictionary { [:] }
 }
 
 class SHPQuantitySample: SHPQueryResult {
@@ -38,8 +48,10 @@ class SHPQuantitySample: SHPQueryResult {
             dateTo: sample.endDate,
             sourceId: sample.sourceRevision.source.bundleIdentifier,
             sourceName: sample.sourceRevision.source.name,
-            dataType: sampleType
+            dataType: sampleType,
+            timezone: sample.metadata?[HKMetadataKeyTimeZone] as? String
         )
+
         self.value = sample.quantity.doubleValue(for: unit.hkUnit)
     }
     
@@ -50,7 +62,8 @@ class SHPQuantitySample: SHPQueryResult {
             "date_from": Int(dateFrom.timeIntervalSince1970 * 1000),
             "date_to": Int(dateTo.timeIntervalSince1970 * 1000),
             "source_id": sourceId,
-            "source_name": sourceName
+            "source_name": sourceName,
+            "timezone": timezone as Any
         ]
     }
 }
@@ -65,7 +78,8 @@ class SHPCategorySample: SHPQueryResult {
             dateTo: sample.endDate,
             sourceId: sample.sourceRevision.source.bundleIdentifier,
             sourceName: sample.sourceRevision.source.name,
-            dataType: sampleType
+            dataType: sampleType,
+            timezone: sample.metadata?[HKMetadataKeyTimeZone] as? String
         )
         self.value = sample.value
     }
@@ -77,7 +91,8 @@ class SHPCategorySample: SHPQueryResult {
             "date_from": Int(dateFrom.timeIntervalSince1970 * 1000),
             "date_to": Int(dateTo.timeIntervalSince1970 * 1000),
             "source_id": sourceId,
-            "source_name": sourceName
+            "source_name": sourceName,
+            "timezone": timezone as Any
         ]
     }
 }
@@ -96,7 +111,8 @@ class SHPWorkout: SHPQueryResult {
             dateTo: sample.endDate,
             sourceId: sample.sourceRevision.source.bundleIdentifier,
             sourceName: sample.sourceRevision.source.name,
-            dataType: sampleType
+            dataType: sampleType,
+            timezone: sample.metadata?[HKMetadataKeyTimeZone] as? String
         )
         self.workoutActivityType = SHPActivityType.allCases.first(
             where: { $0.activity == sample.workoutActivityType }
@@ -116,7 +132,8 @@ class SHPWorkout: SHPQueryResult {
             "date_from": Int(dateFrom.timeIntervalSince1970 * 1000),
             "date_to": Int(dateTo.timeIntervalSince1970 * 1000),
             "source_id": sourceId,
-            "source_name": sourceName
+            "source_name": sourceName,
+            "timezone": timezone as Any
         ]
     }
 }
@@ -133,7 +150,8 @@ class SHPAudiogramSample: SHPQueryResult {
             dateTo: sample.endDate,
             sourceId: sample.sourceRevision.source.bundleIdentifier,
             sourceName: sample.sourceRevision.source.name,
-            dataType: sampleType
+            dataType: sampleType,
+            timezone: sample.metadata?[HKMetadataKeyTimeZone] as? String
         )
         self.frequencies = sample.sensitivityPoints.map({
             $0.frequency.doubleValue(for: .hertz())
@@ -155,7 +173,8 @@ class SHPAudiogramSample: SHPQueryResult {
             "date_from": Int(dateFrom.timeIntervalSince1970 * 1000),
             "date_to": Int(dateTo.timeIntervalSince1970 * 1000),
             "source_id": sourceId,
-            "source_name": sourceName
+            "source_name": sourceName,
+            "timezone": timezone as Any
         ]
     }
 }
