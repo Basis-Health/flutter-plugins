@@ -12,4 +12,11 @@ class SleepTime {
     this.endingHours,
     this.endingMinutes,
   );
+
+  Map<String, dynamic> toJson() => {
+        'startingHours': startingHours,
+        'startingMinutes': startingMinutes,
+        'endingHours': endingHours,
+        'endingMinutes': endingMinutes,
+      };
 }

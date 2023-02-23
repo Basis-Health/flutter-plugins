@@ -22,4 +22,18 @@ class MotionActivity {
     this.confidence,
     this.unknown,
   );
+
+  factory MotionActivity.fromJson(Map<String, dynamic> json) {
+    return MotionActivity(
+      DateTime.fromMillisecondsSinceEpoch(json['startDate']),
+      DateTime.fromMillisecondsSinceEpoch(json['endDate']),
+      json['stationary'],
+      json['walking'],
+      json['running'],
+      json['automotive'],
+      json['cycling'],
+      json['confidence'],
+      json['unknown'],
+    );
+  }
 }
