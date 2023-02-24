@@ -13,7 +13,7 @@ public class MotionSleepPlugin: NSObject, FlutterPlugin {
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         let method = MotionSleepMethod(rawValue: call.method)
         switch method {
-        case .fetchActivites:
+        case .fetchActivities:
             fetchActivities(call: call, result: result)
         case .fetchRecentSleepSession:
             fetchRecentSleepSession(call: call, result: result)

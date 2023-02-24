@@ -151,18 +151,4 @@ extension CMMotionActivity {
         }
         return true
     }
-    
-    func toMotionActivity() -> MotionActivity {
-        return MotionActivity(
-            startDate: self.startDate,
-            endDate: self.startDate,
-            stationary: self.stationary,
-            walking: self.walking,
-            running: self.running,
-            automotive: self.automotive,
-            cycling: self.cycling,
-            confidence: self.confidence.rawValue,
-            unknown: self.unknown
-        )
-    }
 }

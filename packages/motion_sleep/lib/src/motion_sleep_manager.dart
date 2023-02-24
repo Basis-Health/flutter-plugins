@@ -9,13 +9,14 @@ class MotionSleep implements MotionSleepInterface {
     required DateTime start,
     required DateTime end,
   }) async {
-    final response = await _channel.invokeMethod(
+    var response = await _channel.invokeMethod(
       MotionSleepMethod.fetchActivities.name,
       {
         'start': start.millisecondsSinceEpoch,
         'end': end.millisecondsSinceEpoch,
       },
     );
+    response = jsonDecode(jsonEncode(response));
     try {
       final activities = (response as List)
           .map((e) => MotionActivity.fromJson(e as Map<String, dynamic>))
@@ -28,12 +29,12 @@ class MotionSleep implements MotionSleepInterface {
   }
 
   @override
-  Future<SleepSession> fetchMostRecentSleepSession({
+  Future<SleepSession?> fetchMostRecentSleepSession({
     required DateTime start,
     required DateTime end,
     required SleepTime sleepTime,
   }) async {
-    final response = await _channel.invokeMethod(
+    var response = await _channel.invokeMethod(
       MotionSleepMethod.fetchRecentSleepSession.name,
       {
         'start': start.millisecondsSinceEpoch,
@@ -41,11 +42,12 @@ class MotionSleep implements MotionSleepInterface {
         'sleepTime': sleepTime.toJson(),
       },
     );
+    response = jsonDecode(jsonEncode(response));
     try {
       return SleepSession.fromJson(response as Map<String, dynamic>);
     } catch (e) {
-      _log('$e while parsing response $response');
-      rethrow;
+      _log(e.toString());
+      return null;
     }
   }
 
@@ -55,7 +57,7 @@ class MotionSleep implements MotionSleepInterface {
     required DateTime end,
     required SleepTime sleepTime,
   }) async {
-    final response = await _channel.invokeMethod(
+    var response = await _channel.invokeMethod(
       MotionSleepMethod.fetchSleepSessions.name,
       {
         'start': start.millisecondsSinceEpoch,
@@ -63,6 +65,7 @@ class MotionSleep implements MotionSleepInterface {
         'sleepTime': sleepTime.toJson(),
       },
     );
+    response = jsonDecode(jsonEncode(response));
     try {
       final sessions = (response as List)
           .map((e) => SleepSession.fromJson(e as Map<String, dynamic>))

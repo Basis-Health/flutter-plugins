@@ -19,8 +19,16 @@ struct MotionActivity: Codable {
     var confidence: Int
     var unknown: Bool
     
-    func log() {
-        print("Motion activity: \(self.startDate) - \(self.endDate), confidence: \(self.confidence), unknown: \(self.unknown), stationary: \(self.stationary), walking: \(self.walking), running: \(self.running), automotive: \(self.automotive), cycling: \(self.cycling)")
+    init(activity: CMMotionActivity) {
+        self.startDate = activity.startDate
+        self.endDate = activity.startDate
+        self.stationary = activity.stationary
+        self.walking = activity.walking
+        self.running = activity.running
+        self.automotive = activity.automotive
+        self.cycling = activity.cycling
+        self.confidence = activity.confidence.rawValue
+        self.unknown = activity.unknown
     }
 }
 

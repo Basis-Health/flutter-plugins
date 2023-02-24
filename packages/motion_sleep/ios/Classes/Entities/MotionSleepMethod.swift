@@ -8,7 +8,7 @@
 import Foundation
 
 enum MotionSleepMethod: String {
-    case fetchActivites
+    case fetchActivities
     case fetchRecentSleepSession
     case fetchSleepSessions
     case isActivityAvailable

@@ -71,7 +71,8 @@ class MotionSleepManager: MotionSleepInterface {
             if let error = error {
                 completion(.failure(error))
             } else {
-                completion(.success(activities?.compactMap({ $0.toMotionActivity() }) ?? []))
+                let results = activities?.map({ MotionActivity(activity: $0) }) ?? []
+                completion(.success(results))
             }
         }
     }

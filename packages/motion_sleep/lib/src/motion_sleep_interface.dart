@@ -3,7 +3,7 @@ part of motion_sleep;
 abstract class MotionSleepInterface {
   Future<bool> isActivityAvailable();
   Future<void> requestAuthorization();
-  Future<SleepSession> fetchMostRecentSleepSession({
+  Future<SleepSession?> fetchMostRecentSleepSession({
     required DateTime start,
     required DateTime end,
     required SleepTime sleepTime,
