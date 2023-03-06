@@ -39,18 +39,16 @@ class _HealthAppState extends State<HealthApp> {
 
     // define the types to get
     final types = [
-      HealthDataType.STEPS,
-      HealthDataType.WEIGHT,
       HealthDataType.HEIGHT,
       HealthDataType.BLOOD_GLUCOSE,
       HealthDataType.WORKOUT,
+      HealthDataType.SLEEP,
       // Uncomment these lines on iOS - only available on iOS
       // HealthDataType.AUDIOGRAM
     ];
 
     // with coresponsing permissions
     final permissions = [
-      HealthDataAccess.READ,
       HealthDataAccess.READ,
       HealthDataAccess.READ,
       HealthDataAccess.READ,
@@ -80,7 +78,7 @@ class _HealthAppState extends State<HealthApp> {
       try {
         // fetch health data
         List<HealthDataPoint> healthData =
-            await health.getHealthDataFromTypes(yesterday, now, types);
+            await health.getBatchHealthDataFromTypes(yesterday, now, types);
         // save all the new data points (only the first 100)
         _healthDataList.addAll((healthData.length < 100)
             ? healthData
