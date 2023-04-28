@@ -16,15 +16,15 @@ class MotionSleep implements MotionSleepInterface {
         'end': end.millisecondsSinceEpoch,
       },
     );
-    response = jsonDecode(jsonEncode(response));
     try {
+      response = jsonDecode(jsonEncode(response));
       final activities = (response as List)
           .map((e) => MotionActivity.fromJson(e as Map<String, dynamic>))
           .toList();
       return activities;
     } catch (e) {
       _log('$e while parsing response $response');
-      rethrow;
+      return [];
     }
   }
 
@@ -42,8 +42,8 @@ class MotionSleep implements MotionSleepInterface {
         'sleepTime': sleepTime.toJson(),
       },
     );
-    response = jsonDecode(jsonEncode(response));
     try {
+      response = jsonDecode(jsonEncode(response));
       return SleepSession.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       _log(e.toString());
@@ -65,15 +65,16 @@ class MotionSleep implements MotionSleepInterface {
         'sleepTime': sleepTime.toJson(),
       },
     );
-    response = jsonDecode(jsonEncode(response));
+
     try {
+      response = jsonDecode(jsonEncode(response));
       final sessions = (response as List)
           .map((e) => SleepSession.fromJson(e as Map<String, dynamic>))
           .toList();
       return sessions;
     } catch (e) {
       _log('$e while parsing response $response');
-      rethrow;
+      return [];
     }
   }
 
