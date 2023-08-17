@@ -1,6 +1,7 @@
 part of motion_sleep;
 
 abstract class MotionSleepInterface {
+  Future<MotionAuthorizationStatus> fetchAuthorizationStatus();
   Future<bool> isActivityAvailable();
   Future<void> requestAuthorization();
   Future<SleepSession?> fetchMostRecentSleepSession({

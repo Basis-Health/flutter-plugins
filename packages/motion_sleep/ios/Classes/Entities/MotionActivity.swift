@@ -143,3 +143,10 @@ private extension MotionActivity {
         return true
     }
 }
+
+enum MotionAuthorizationStatus: String {
+    case authorized
+    case restricted
+    case notDetermined
+    case denied
+}

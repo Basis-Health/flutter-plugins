@@ -8,6 +8,7 @@
 import Foundation
 
 enum MotionSleepMethod: String {
+    case fetchAuthorizationStatus
     case fetchActivities
     case fetchRecentSleepSession
     case fetchSleepSessions

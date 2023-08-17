@@ -8,6 +8,7 @@
 import Foundation
 
 protocol MotionSleepInterface {
+    func authorizationStatus() -> MotionAuthorizationStatus
     func isActivityAvailable() -> Bool
     func requestAuthorization()
     func fetchMostRecentSleepSession(

@@ -23,6 +23,8 @@ public class MotionSleepPlugin: NSObject, FlutterPlugin {
             isActivityAvailable(call: call, result: result)
         case .requestAuthorization:
             requestAuthorization(call: call, result: result)
+        case .fetchAuthorizationStatus:
+            authorizationStatus(call: call, result: result)
         default:
             print("\(call.method) is not supported")
         }
@@ -95,5 +97,9 @@ public class MotionSleepPlugin: NSObject, FlutterPlugin {
     func requestAuthorization(call: FlutterMethodCall, result: @escaping FlutterResult) {
         manager.requestAuthorization()
         result(true)
+    }
+    
+    func authorizationStatus(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        result(manager.authorizationStatus().rawValue)
     }
 }
