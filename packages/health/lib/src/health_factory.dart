@@ -285,7 +285,7 @@ class HealthFactory {
 
   Future<List<HealthDataPoint>> getBatchHealthDataFromTypes(
       DateTime startTime, DateTime endTime, List<HealthDataType> types,
-      {bool deduplicates = true, bool? threaded}) async {
+      {bool deduplicates = true, bool? threaded, int? limit}) async {
     validateQuery(types.toList());
     final queries = types
         .map((e) => HealthDataQuery(type: e, unit: dataTypeToUnit[e]!))
@@ -296,6 +296,7 @@ class HealthFactory {
       queries,
       deduplicates,
       threaded,
+      limit,
     );
   }
 
@@ -387,11 +388,13 @@ class HealthFactory {
     List<HealthDataQuery> queries,
     bool deduplicate,
     bool? threaded,
+    int? limit,
   ) async {
     final args = <String, dynamic>{
       'dataTypes': queries.map((e) => e.toJson()).toList(),
       'startTime': startTime.millisecondsSinceEpoch,
       'endTime': endTime.millisecondsSinceEpoch,
+      if (limit != null) 'limit': limit,
     };
     var results =
         await _channel.invokeMethod('getBatchData', args) as List<dynamic>;
