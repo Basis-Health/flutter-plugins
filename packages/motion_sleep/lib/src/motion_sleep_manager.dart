@@ -5,6 +5,13 @@ class MotionSleep implements MotionSleepInterface {
   static const MethodChannel _channel = MethodChannel('motion_sleep');
 
   @override
+  Future<MotionAuthorizationStatus> fetchAuthorizationStatus() {
+    return _channel.invokeMethod(
+      MotionSleepMethod.fetchAuthorizationStatus.name,
+    ).then((value) => MotionAuthorizationStatus.fromString(value as String));
+  }
+
+  @override
   Future<List<MotionActivity>> fetchActivities({
     required DateTime start,
     required DateTime end,

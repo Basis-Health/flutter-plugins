@@ -12,6 +12,15 @@ class MotionSleepManager: MotionSleepInterface {
     static let shared = MotionSleepManager()
     private let manager = CMMotionActivityManager()
     
+    func authorizationStatus() -> MotionAuthorizationStatus {
+        switch CMMotionActivityManager.authorizationStatus() {
+        case .authorized: return .authorized
+        case .denied: return .denied
+        case .notDetermined: return .notDetermined
+        default: return .restricted
+        }
+    }
+    
     func isActivityAvailable() -> Bool { CMMotionActivityManager.isActivityAvailable() }
     
     func requestAuthorization() { manager.queryActivityStarting(from: Date(), to: Date(), to: .main) { _, _ in } }
