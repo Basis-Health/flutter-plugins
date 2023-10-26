@@ -1,5 +1,13 @@
 part of health;
 
+extension RemoveDuplicates on Iterable<HealthDataPoint> {
+  /// Given an array of [HealthDataPoint]s, this method will return the array
+  /// without any duplicates.
+  List<HealthDataPoint> removeDuplicates()
+    => LinkedHashSet.of(this).toList();
+}
+
+
 /// Main class for the Plugin.
 ///
 /// The plugin supports:
@@ -17,16 +25,16 @@ class HealthFactory {
       Platform.isAndroid ? PlatformType.ANDROID : PlatformType.IOS;
 
   /// Check if a given data type is available on the platform
-  bool isDataTypeAvailable(HealthDataType dataType) {
+  bool isDataTypeAvailable(final HealthDataType dataType) {
     if (Platform.isAndroid) return dataTypeKeysAndroid.contains(dataType);
     if (Platform.isIOS) return dataTypeKeysIOS.contains(dataType);
-    throw Exception('Unsupported platform ${Platform.operatingSystem}');
+    throw UnimplementedError('Unsupported platform ${Platform.operatingSystem}');
   }
 
   List<HealthDataType> getAvailableDataTypes() {
     if (Platform.isAndroid) return dataTypeKeysAndroidList;
     if (Platform.isIOS) return dataTypeKeysIOSList;
-    throw Exception('Unsupported platform ${Platform.operatingSystem}');
+    throw UnimplementedError('Unsupported platform ${Platform.operatingSystem}');
   }
 
   /// Determines if the data types have been granted with the specified access rights.
@@ -52,25 +60,19 @@ class HealthFactory {
   ///   with a READ or READ_WRITE access.
   ///
   ///   On Android, this function returns true or false, depending on whether the specified access right has been granted.
-  static Future<bool?> hasPermissions(List<HealthDataType> types,
-      {List<HealthDataAccess>? permissions}) async {
+  static Future<bool?> hasPermissions(
+    final List<HealthDataType> types, {
+    final List<HealthDataAccess>? permissions,
+  }) async {
     if (permissions != null && permissions.length != types.length) {
-      throw ArgumentError(
-          'The lists of types and permissions must be of same length.');
+      throw ArgumentError('The lists of types and permissions must be of same length.');
     }
 
-    final mTypes = List<HealthDataType>.from(types, growable: true);
-    final mPermissions = permissions == null
-        ? List<int>.filled(types.length, HealthDataAccess.READ.index,
-            growable: true)
-        : permissions.map((permission) => permission.index).toList();
-
-    /// On Android, if BMI is requested, then also ask for weight and height
-    if (Platform.isAndroid) _handleBMI(mTypes, mPermissions);
-
     return await _channel.invokeMethod('hasPermissions', {
-      'types': mTypes.map((type) => type.typeToString()).toList(),
-      'permissions': mPermissions,
+      'types': types.map((type) => type.typeToString()).toList(growable: false),
+      'permissions': permissions == null
+        ? List<int>.filled(types.length, HealthDataAccess.READ.index, growable: true)
+        : permissions.map((permission) => permission.index).toList(growable: false),
     });
   }
 
@@ -98,85 +100,22 @@ class HealthFactory {
   ///   As Apple HealthKit will not disclose if READ access has been granted for a data type due to privacy concern,
   ///   this method will return **true if the window asking for permission was showed to the user without errors**
   ///   if it is called on iOS with a READ or READ_WRITE access.
-  Future<bool> requestAuthorization(
-    List<HealthDataType> types, {
-    List<HealthDataAccess>? permissions,
+  Future<bool?> requestAuthorization(
+    final List<HealthDataType> types, {
+    final List<HealthDataAccess>? permissions,
   }) async {
     if (permissions != null && permissions.length != types.length) {
-      throw ArgumentError(
-          'The length of [types] must be same as that of [permissions].');
+      throw ArgumentError('The length of [types] must be same as that of [permissions].');
     }
 
-    final mTypes = List<HealthDataType>.from(types, growable: true);
-    final mPermissions = permissions == null
+    final bool? isAuthorized = await _channel.invokeMethod('requestAuthorization', {
+      'types': types.map((e) => healthEnumToString(e)).toList(growable: false),
+      'permissions': permissions == null
         ? List<int>.filled(types.length, HealthDataAccess.READ.index,
             growable: true)
-        : permissions.map((permission) => permission.index).toList();
-
-    // on Android, if BMI is requested, then also ask for weight and height
-    if (_platformType == PlatformType.ANDROID) _handleBMI(mTypes, mPermissions);
-
-    List<String> keys = mTypes.map((e) => healthEnumToString(e)).toList();
-    final bool? isAuthorized = await _channel.invokeMethod(
-        'requestAuthorization', {'types': keys, 'permissions': mPermissions});
-    return isAuthorized ?? false;
-  }
-
-  static void _handleBMI(List<HealthDataType> mTypes, List<int> mPermissions) {
-    final index = mTypes.indexOf(HealthDataType.BODY_MASS_INDEX);
-
-    if (index != -1 && _platformType == PlatformType.ANDROID) {
-      if (!mTypes.contains(HealthDataType.WEIGHT)) {
-        mTypes.add(HealthDataType.WEIGHT);
-        mPermissions.add(mPermissions[index]);
-      }
-      if (!mTypes.contains(HealthDataType.HEIGHT)) {
-        mTypes.add(HealthDataType.HEIGHT);
-        mPermissions.add(mPermissions[index]);
-      }
-      mTypes.remove(HealthDataType.BODY_MASS_INDEX);
-      mPermissions.removeAt(index);
-    }
-  }
-
-  /// Calculate the BMI using the last observed height and weight values.
-  Future<List<HealthDataPoint>> _computeAndroidBMI(
-      DateTime startTime, DateTime endTime) async {
-    List<HealthDataPoint> heights =
-        await _prepareQuery(startTime, endTime, [HealthDataType.HEIGHT], true);
-
-    if (heights.isEmpty) {
-      return const [];
-    }
-
-    List<HealthDataPoint> weights =
-        await _prepareQuery(startTime, endTime, [HealthDataType.WEIGHT], true);
-    double h =
-        (heights.last.value as NumericHealthValue).numericValue.toDouble();
-
-    const dataType = HealthDataType.BODY_MASS_INDEX;
-    final unit = dataTypeToUnit[dataType]!;
-
-    final bmiHealthPoints = <HealthDataPoint>[];
-    for (var i = 0; i < weights.length; i++) {
-      final bmiValue =
-          (weights[i].value as NumericHealthValue).numericValue.toDouble() /
-              (h * h);
-      final x = HealthDataPoint(
-        NumericHealthValue(bmiValue),
-        dataType,
-        unit,
-        weights[i].dateFrom,
-        weights[i].dateTo,
-        _platformType,
-        '',
-        '',
-        null,
-      );
-
-      bmiHealthPoints.add(x);
-    }
-    return bmiHealthPoints;
+        : permissions.map((permission) => permission.index).toList(growable: false),
+    });
+    return isAuthorized;
   }
 
   /// Saves health data into Apple Health or Google Fit.
@@ -193,38 +132,36 @@ class HealthFactory {
   ///   + Simply set [endTime] equal to [startTime] if the [value] is measured only at a specific point in time.
   ///
   /// Values for Sleep and Headache are ignored and will be automatically assigned the coresponding value.
-  Future<bool> writeHealthData(
-    double value,
-    HealthDataType type,
-    DateTime startTime,
-    DateTime endTime, {
-    HealthDataUnit? unit,
+  Future<bool?> writeHealthData(
+    final double value,
+    final HealthDataType type,
+    final DateTime startTime,
+    final DateTime endTime, {
+    final HealthDataUnit? unit,
   }) async {
-    if (type == HealthDataType.WORKOUT)
-      throw ArgumentError(
-          'Adding workouts should be done using the writeWorkoutData method.');
-    if (startTime.isAfter(endTime))
+    if (type == HealthDataType.WORKOUT) {
+      throw ArgumentError('Adding workouts should be done using the writeWorkoutData method.');
+    }
+    if (startTime.isAfter(endTime)) {
       throw ArgumentError('startTime must be equal or earlier than endTime');
-    if ([
+    }
+
+    if (const [
       HealthDataType.HIGH_HEART_RATE_EVENT,
       HealthDataType.LOW_HEART_RATE_EVENT,
       HealthDataType.IRREGULAR_HEART_RATE_EVENT
-    ].contains(type))
-      throw ArgumentError(
-          '$type - iOS doesnt support writing this data type in HealthKit');
+    ].contains(type)) {
+      throw ArgumentError('$type - iOS doesnt support writing this data type in HealthKit');
+    }
 
     // Assign default unit if not specified
-    unit ??= dataTypeToUnit[type]!;
-
-    Map<String, dynamic> args = {
+    return await _channel.invokeMethod('writeData', <String, dynamic>{
       'value': value,
       'dataTypeKey': type.typeToString(),
-      'dataUnitKey': unit.typeToString(),
+      'dataUnitKey': (unit ?? dataTypeToUnit[type]!).typeToString(),
       'startTime': startTime.millisecondsSinceEpoch,
       'endTime': endTime.millisecondsSinceEpoch
-    };
-    bool? success = await _channel.invokeMethod('writeData', args);
-    return success ?? false;
+    });
   }
 
   /// Saves audiogram into Apple Health.
@@ -241,27 +178,28 @@ class HealthFactory {
   ///   + It must be equal to or later than [startTime].
   ///   + Simply set [endTime] equal to [startTime] if the audiogram is measured only at a specific point in time.
   /// * [metadata] - optional map of keys, both HKMetadataKeyExternalUUID and HKMetadataKeyDeviceName are required
-  Future<bool> writeAudiogram(
-      List<double> frequencies,
-      List<double> leftEarSensitivities,
-      List<double> rightEarSensitivities,
-      DateTime startTime,
-      DateTime endTime,
-      {Map<String, dynamic>? metadata}) async {
-    if (frequencies.isEmpty ||
-        leftEarSensitivities.isEmpty ||
-        rightEarSensitivities.isEmpty)
-      throw ArgumentError(
-          'frequencies, leftEarSensitivities and rightEarSensitivities can\'t be empty');
+  Future<bool?> writeAudiogram(
+    final List<double> frequencies,
+    final List<double> leftEarSensitivities,
+    final List<double> rightEarSensitivities,
+    final DateTime startTime,
+    final DateTime endTime, {
+    final Map<String, dynamic>? metadata,
+  }) async {
+    if (frequencies.isEmpty || leftEarSensitivities.isEmpty || rightEarSensitivities.isEmpty) {
+      throw ArgumentError('frequencies, leftEarSensitivities and rightEarSensitivities can\'t be empty');
+    }
     if (frequencies.length != leftEarSensitivities.length ||
-        rightEarSensitivities.length != leftEarSensitivities.length)
-      throw ArgumentError(
-          'frequencies, leftEarSensitivities and rightEarSensitivities need to be of the same length');
-    if (startTime.isAfter(endTime))
+        rightEarSensitivities.length != leftEarSensitivities.length) {
+      throw ArgumentError('frequencies, leftEarSensitivities and rightEarSensitivities need to be of the same length');
+    }
+    if (startTime.isAfter(endTime)) {
       throw ArgumentError('startTime must be equal or earlier than endTime');
-    if (_platformType == PlatformType.ANDROID)
+    }
+    if (_platformType == PlatformType.ANDROID) {
       throw UnsupportedError('writeAudiogram is not supported on Android');
-    Map<String, dynamic> args = {
+    }
+    bool? success = await _channel.invokeMethod('writeAudiogram', {
       'frequencies': frequencies,
       'leftEarSensitivities': leftEarSensitivities,
       'rightEarSensitivities': rightEarSensitivities,
@@ -269,159 +207,137 @@ class HealthFactory {
       'startTime': startTime.millisecondsSinceEpoch,
       'endTime': endTime.millisecondsSinceEpoch,
       'metadata': metadata,
-    };
-    bool? success = await _channel.invokeMethod('writeAudiogram', args);
-    return success ?? false;
+    });
+    return success;
   }
 
   /// Fetch a list of health data points based on [types].
   Future<List<HealthDataPoint>> getHealthDataFromTypes(
-      DateTime startTime, DateTime endTime, List<HealthDataType> types,
-      {bool deduplicates = true, bool? threaded}) async {
-    List<HealthDataPoint> dataPoints =
-        await _prepareQuery(startTime, endTime, types, deduplicates, threaded);
-    return dataPoints;
+    final DateTime startTime,
+    final DateTime endTime,
+    final List<HealthDataType> types, {
+    final bool deduplicates = true,
+    final bool? threaded
+  }) async {
+    final data = await _prepareQuery(startTime, endTime, types, deduplicates, threaded);
+    return await _parseHealthPointsFromRaw(data, threaded ?? false);
   }
 
   Future<List<HealthDataPoint>> getBatchHealthDataFromTypes(
-      DateTime startTime, DateTime endTime, List<HealthDataType> types,
-      {bool deduplicates = true, bool? threaded, int? limit}) async {
-    validateQuery(types.toList());
-    final queries = types
-        .map((e) => HealthDataQuery(type: e, unit: dataTypeToUnit[e]!))
-        .toList();
-    return await _batchDataQuery(
-      startTime,
-      endTime,
-      queries,
-      deduplicates,
-      threaded,
-      limit,
-    );
+    final DateTime startTime,
+    final DateTime endTime,
+    final List<HealthDataType> types, {
+    final bool deduplicates = true,
+    final bool? threaded,
+    final int? limit,
+  }) async {
+    final result = await _batchDataQuery(startTime, endTime, types, deduplicates, threaded, limit);
+    return await _parseHealthPointsFromRaw(result, threaded);
   }
 
-  Future<List<HealthDevice>> getDevices() {
-    return _channel.invokeMethod('getDevices').then((value) {
-      return (value as List).map((e) => HealthDevice.fromMap(e)).toList();
-    });
+  Future<List<HealthDevice>> getDevices() async {
+    final devices = await _channel.invokeMethod('getDevices');
+    return (devices as List).map((e) => HealthDevice.fromMap(e)).toList();
   }
 
   /// Prepares a query, i.e. checks if the types are available, etc.
-  Future<List<HealthDataPoint>> _prepareQuery(DateTime startTime,
-      DateTime endTime, List<HealthDataType> dataType, bool deduplicate,
-      [bool? threaded]) async {
-    // If not implemented on platform, throw an exception
-    for (var type in dataType) {
-      if (!isDataTypeAvailable(type)) {
-        throw HealthException(
-            dataType, 'Not available on platform $_platformType');
-      }
-    }
-
-    // If BodyMassIndex is requested on Android, calculate this manually
-    if (dataType.contains(HealthDataType.BODY_MASS_INDEX) &&
-        _platformType == PlatformType.ANDROID) {
-      dataType.removeWhere((e) => e == HealthDataType.BODY_MASS_INDEX);
-      return _computeAndroidBMI(startTime, endTime);
-    }
-
-    return await _dataQuery(
-        startTime, endTime, dataType, deduplicate, threaded);
-  }
-
-  void validateQuery(List<HealthDataType> dataType) {
-    // If not implemented on platform, throw an exception
-    for (var type in dataType) {
-      if (!isDataTypeAvailable(type)) {
-        throw HealthException(
-            dataType, 'Not available on platform $_platformType');
-      }
-    }
-  }
-
-  /// The main function for fetching health data
-  Future<List<HealthDataPoint>> _dataQuery(
-    DateTime startTime,
-    DateTime endTime,
-    List<HealthDataType> dataType,
-    bool deduplicate,
-    bool? threaded,
+  Future<List<Map<String, dynamic>>> _prepareQuery(
+    final DateTime startTime,
+    final DateTime endTime,
+    final List<HealthDataType> dataType,
+    final bool deduplicate,
+    final bool? threaded,
   ) async {
-    var results =
-        await Future.wait<Map<String, dynamic>?>(dataType.map((e) async {
-      final args = <String, dynamic>{
+    // If not implemented on platform, throw an exception
+    validateQuery(dataType);
+    return await _dataQuery(startTime, endTime, dataType, deduplicate, threaded);
+  }
+  
+
+  void validateQuery(final List<HealthDataType> dataType) {
+    // If not implemented on platform, throw an exception
+    for (var type in dataType) {
+      if (!isDataTypeAvailable(type)) {
+        throw HealthException(dataType, 'Not available on platform $_platformType');
+      }
+    }
+  }
+
+  /// Runs a default data query by querying each type individually.
+  Future<List<Map<String, dynamic>>> _dataQuery(
+    final DateTime startTime,
+    final DateTime endTime,
+    final List<HealthDataType> dataType,
+    final bool deduplicate,
+    final bool? threaded,
+  ) async {
+    return await Future.wait<Map<String, dynamic>>(dataType.map((e) async {
+      final fetchedDataPoints = await _channel.invokeMethod('getData', <String, dynamic>{
         'dataTypeKey': e.typeToString(),
         'dataUnitKey': dataTypeToUnit[e]!.typeToString(),
         'startTime': startTime.millisecondsSinceEpoch,
         'endTime': endTime.millisecondsSinceEpoch,
+      });
+
+      assert(fetchedDataPoints is List);
+      assert((fetchedDataPoints as List).every((element) => element is Map<String, dynamic>));
+
+      return <String, dynamic>{
+        'dataType': e,
+        'dataPoints': (fetchedDataPoints as List?)?.cast<Map<String, dynamic>>() ?? const <Map<String, dynamic>>[],
+        'deduplicate': deduplicate,
       };
-      final fetchedDataPoints = await _channel.invokeMethod('getData', args);
-      if (fetchedDataPoints != null) {
-        return <String, dynamic>{
-          'dataType': e,
-          'dataPoints': fetchedDataPoints,
-          'deduplicate': deduplicate,
-        };
-      } else {
-        return null;
-      }
     }).toList(growable: false));
-    // removes all unsuccessful queries
-    results.removeWhere((element) => element == null);
-    var r = results.cast<Map<String, dynamic>>();
-
-    int size = 0;
-    for (var item in r) {
-      size += item.length;
-    }
-    const thresHold = 100;
-    // If the no. of data points are larger than the threshold,
-    // call the compute method to spawn an Isolate to do the parsing in a separate thread.
-    threaded ??= size > thresHold;
-
-    return threaded ? await compute(_parse, r) : _parse(r);
   }
 
-  Future<List<HealthDataPoint>> _batchDataQuery(
-    DateTime startTime,
-    DateTime endTime,
-    List<HealthDataQuery> queries,
-    bool deduplicate,
-    bool? threaded,
-    int? limit,
+  /// Runs a batch data query by querying each type individually.
+  /// 
+  Future<List<Map<String, dynamic>>> _batchDataQuery(
+    final DateTime startTime,
+    final DateTime endTime,
+    final List<HealthDataType> queries,
+    final bool deduplicate,
+    final bool? threaded,
+    final int? limit,
   ) async {
-    final args = <String, dynamic>{
-      'dataTypes': queries.map((e) => e.toJson()).toList(),
+    final rawResults = await _channel.invokeMethod('getBatchData', <String, dynamic>{
+      'dataTypes': queries.map((e) => {
+        'type': e.typeToString(),
+        'unit': dataTypeToUnit[e]?.typeToString(),
+      }).toList(growable: false),
       'startTime': startTime.millisecondsSinceEpoch,
       'endTime': endTime.millisecondsSinceEpoch,
       if (limit != null) 'limit': limit,
-    };
-    var results =
-        await _channel.invokeMethod('getBatchData', args) as List<dynamic>;
-    results = results.map((e) {
-      var data = Map<String, dynamic>.from(e);
-      final dataTypeString = data['dataType'] as String;
-      data['dataType'] = HealthDataType.fromTypeString(dataTypeString);
-      data['deduplicate'] = deduplicate;
-      return data;
-    }).toList();
-    // removes all unsuccessful queries
-    results.removeWhere((element) => element == null);
-    var r = results.cast<Map<String, dynamic>>();
+    });
 
-    int size = 0;
-    for (var item in r) {
-      size += item.length;
-    }
-    const thresHold = 100;
-    // If the no. of data points are larger than the threshold,
-    // call the compute method to spawn an Isolate to do the parsing in a separate thread.
-    threaded ??= size > thresHold;
+    assert(rawResults is List, 'Results is not a list');
+    assert((rawResults as List).every((element) => element is Map<String, dynamic>));
 
-    return threaded ? await compute(_parse, r) : _parse(r);
+    return (rawResults as List)
+      .cast<Map<String, dynamic>>()
+      .map((final data) => <String, dynamic>{
+        'dataType': HealthDataType.fromTypeString(data['dataType'] as String),
+        'dataPoints': data,
+        'deduplicate': deduplicate,
+      })
+      .toList(growable: false);
   }
 
-  static List<HealthDataPoint> _parse(List<Map<String, dynamic>> messages) {
+  static _parseHealthPointsFromRaw(
+    final List<Map<String, dynamic>> results,
+    final bool? threaded,
+  ) async {
+    final totalSize = results.fold<int>(0, (p, v) => p + v.length);
+    const threshold = 100;
+
+    // If the no. of data points are larger than the threshold,
+    // call the compute method to spawn an Isolate to do the parsing in a separate thread.
+    return threaded ?? totalSize >= threshold ? await compute(_parseHealthPoints, results) : _parseHealthPoints(results);
+  }
+
+  static List<HealthDataPoint> _parseHealthPoints(
+    final List<Map<String, dynamic>> messages,
+  ) {
     final results = <HealthDataPoint>[];
 
     for (final message in messages) {
@@ -429,31 +345,29 @@ class HealthFactory {
       final dataPoints = message['dataPoints'] as List<dynamic>;
       final deduplicate = message['deduplicate'] as bool;
       final unit = dataTypeToUnit[dataType] ?? HealthDataUnit.UNKNOWN_UNIT;
-      var list = dataPoints.map<HealthDataPoint>((e) {
-        // Handling different [HealthValue] types
-        HealthValue value;
-        if (dataType == HealthDataType.AUDIOGRAM) {
-          value = AudiogramHealthValue.fromJson(e);
-        } else if (dataType == HealthDataType.WORKOUT) {
-          value = WorkoutHealthValue.fromJson(e);
-        } else {
-          value = NumericHealthValue(e['value']);
-        }
-        return HealthDataPoint(
-          value,
-          dataType,
-          unit,
-          DateTime.fromMillisecondsSinceEpoch(e['date_from']),
-          DateTime.fromMillisecondsSinceEpoch(e['date_to']),
-          _platformType,
-          e['source_id'],
-          e['source_name'],
-          e['timezone'],
-        );
-      }).toList();
+  
+      Iterable<HealthDataPoint> list = dataPoints
+        .map<HealthDataPoint>((final e) {
+          // Handling different [HealthValue] types
+          return HealthDataPoint(
+            switch (dataType) {
+              HealthDataType.AUDIOGRAM => AudiogramHealthValue.fromJson(e),
+              HealthDataType.WORKOUT => WorkoutHealthValue.fromJson(e),
+              _ => NumericHealthValue(e['value']),
+            },
+            dataType,
+            unit,
+            DateTime.fromMillisecondsSinceEpoch(e['date_from']),
+            DateTime.fromMillisecondsSinceEpoch(e['date_to']),
+            _platformType,
+            e['source_id'],
+            e['source_name'],
+            e['timezone'],
+          );
+        });
 
       if (deduplicate) {
-        list = removeDuplicates(list);
+        list = list.removeDuplicates();
       }
 
       results.addAll(list);
@@ -462,36 +376,26 @@ class HealthFactory {
   }
 
   static Future<List<HealthDataPoint>> removeDuplicatesCompute(
-      List<HealthDataPoint> points,
-      {int threshold = 100}) async {
-    if (points.length > threshold) {
-      return await compute(removeDuplicates, points);
-    } else {
-      return removeDuplicates(points);
-    }
-  }
+    final List<HealthDataPoint> points,
+    {final int threshold = 100}
+  ) async => points.length > threshold ? await compute(_removeDuplicates, points) : _removeDuplicates(points);
 
-  /// Given an array of [HealthDataPoint]s, this method will return the array
-  /// without any duplicates.
-  static List<HealthDataPoint> removeDuplicates(List<HealthDataPoint> points) {
-    return LinkedHashSet.of(points).toList();
-  }
+  static List<HealthDataPoint> _removeDuplicates(final List<HealthDataPoint> points) => points.removeDuplicates();
 
   /// Get the total numbner of steps within a specific time period.
   /// Returns null if not successful.
   ///
   /// Is a fix according to https://stackoverflow.com/questions/29414386/step-count-retrieved-through-google-fit-api-does-not-match-step-count-displayed/29415091#29415091
   Future<int?> getTotalStepsInInterval(
-    DateTime startTime,
-    DateTime endTime,
+    final DateTime startTime,
+    final DateTime endTime,
   ) async {
-    final args = <String, dynamic>{
-      'startTime': startTime.millisecondsSinceEpoch,
-      'endTime': endTime.millisecondsSinceEpoch
-    };
     final stepsCount = await _channel.invokeMethod<int?>(
       'getTotalStepsInInterval',
-      args,
+      <String, dynamic>{
+      'startTime': startTime.millisecondsSinceEpoch,
+      'endTime': endTime.millisecondsSinceEpoch
+      },
     );
     return stepsCount;
   }
@@ -509,23 +413,21 @@ class HealthFactory {
   /// - [totalDistance] The total distance traveled during the workout
   /// - [totalDistanceUnit] The UNIT used to measure [totalDistance] *ONLY FOR IOS* Default value is METER.
   Future<bool> writeWorkoutData(
-    HealthWorkoutActivityType activityType,
-    DateTime start,
-    DateTime end, {
-    int? totalEnergyBurned,
-    HealthDataUnit totalEnergyBurnedUnit = HealthDataUnit.KILOCALORIE,
-    int? totalDistance,
-    HealthDataUnit totalDistanceUnit = HealthDataUnit.METER,
+    final HealthWorkoutActivityType activityType,
+    final DateTime start,
+    final DateTime end, {
+    final int? totalEnergyBurned,
+    final HealthDataUnit totalEnergyBurnedUnit = HealthDataUnit.KILOCALORIE,
+    final int? totalDistance,
+    final HealthDataUnit totalDistanceUnit = HealthDataUnit.METER,
   }) async {
     // Check that value is on the current Platform
     if (_platformType == PlatformType.IOS && !_isOnIOS(activityType)) {
-      throw HealthException(activityType,
-          'Workout activity type $activityType is not supported on iOS');
+      throw HealthException(activityType, 'Workout activity type $activityType is not supported on iOS');
     } else if (!_isOnAndroid(activityType)) {
-      throw HealthException(activityType,
-          'Workout activity type $activityType is not supported on Android');
+      throw HealthException(activityType, 'Workout activity type $activityType is not supported on Android');
     }
-    final args = <String, dynamic>{
+    final success = await _channel.invokeMethod('writeWorkoutData', <String, dynamic>{
       'activityType': activityType.typeToString(),
       'startTime': start.millisecondsSinceEpoch,
       'endTime': end.millisecondsSinceEpoch,
@@ -533,19 +435,18 @@ class HealthFactory {
       'totalEnergyBurnedUnit': healthEnumToString(totalEnergyBurnedUnit),
       'totalDistance': totalDistance,
       'totalDistanceUnit': healthEnumToString(totalDistanceUnit),
-    };
-    final success = await _channel.invokeMethod('writeWorkoutData', args);
+    });
     return success ?? false;
   }
 
   /// Check if the given [HealthWorkoutActivityType] is supported on the iOS platform
-  bool _isOnIOS(HealthWorkoutActivityType type) {
+  bool _isOnIOS(final HealthWorkoutActivityType type) {
     // Returns true if the type is part of the iOS set
     return activityTypesiOS.contains(type);
   }
 
   /// Check if the given [HealthWorkoutActivityType] is supported on the Android platform
-  bool _isOnAndroid(HealthWorkoutActivityType type) {
+  bool _isOnAndroid(final HealthWorkoutActivityType type) {
     // Returns true if the type is part of the Android set
     return activityTypesAndroid.contains(type);
   }

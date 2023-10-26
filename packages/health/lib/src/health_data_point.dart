@@ -27,22 +27,17 @@ class HealthDataPoint {
 
   /// Converts a json object to the [HealthDataPoint]
   factory HealthDataPoint.fromJson(json) {
-    var dataType = HealthDataType.fromTypeString(json['data_type']);
-    HealthValue value;
-    if (dataType == HealthDataType.AUDIOGRAM) {
-      value = AudiogramHealthValue.fromJson(json['value']);
-    } else if (dataType == HealthDataType.WORKOUT) {
-      value = WorkoutHealthValue.fromJson(json['value']);
-    } else {
-      value = NumericHealthValue.fromJson(json['value']);
-    }
-
+    final dataType = HealthDataType.fromTypeString(json['data_type']);
     return HealthDataPoint(
-      value,
+      switch (dataType) {
+        HealthDataType.AUDIOGRAM => AudiogramHealthValue.fromJson(json['value']),
+        HealthDataType.WORKOUT => WorkoutHealthValue.fromJson(json['value']),
+        _ => NumericHealthValue.fromJson(json['value']),
+      },
       dataType,
       HealthDataUnit.fromTypeString(json['unit']),
-      DateTime.parse(json['date_from']),
-      DateTime.parse(json['date_to']),
+      DateTime.parse(json['date_from']).toLocal(),
+      DateTime.parse(json['date_to']).toLocal(),
       platformTypeJsonValueReverse[json['platform_type']]!,
       json['source_id'],
       json['source_name'],
@@ -55,8 +50,8 @@ class HealthDataPoint {
         'value': value.toJson(),
         'data_type': type.typeToString(),
         'unit': unit.typeToString(),
-        'date_from': dateFrom.toIso8601String(),
-        'date_to': dateTo.toIso8601String(),
+        'date_from': dateFrom.toUtc().toIso8601String(),
+        'date_to': dateTo.toUtc().toIso8601String(),
         'platform_type': PlatformTypeJsonValue[platform],
         'source_id': sourceId,
         'source_name': sourceName,
@@ -64,16 +59,7 @@ class HealthDataPoint {
       };
 
   @override
-  String toString() => """${this.runtimeType} - 
-    value: ${value.toString()},
-    unit: $unit,
-    dateFrom: $dateFrom,
-    dateTo: $dateTo,
-    dataType: $type,
-    platform: $platform,
-    sourceId: $sourceId,
-    sourceName: $sourceName,
-    timezone: $_timezone""";
+  String toString() => jsonEncode(toJson());
 
   // / The quantity value of the data point
   HealthValue get value => _value;

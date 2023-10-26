@@ -14,9 +14,7 @@ class NumericHealthValue extends HealthValue {
   num get numericValue => _numericValue;
 
   @override
-  String toString() {
-    return numericValue.toString();
-  }
+  String toString() => numericValue.toString();
 
   factory NumericHealthValue.fromJson(json) {
     return NumericHealthValue(num.parse(json['numericValue']));

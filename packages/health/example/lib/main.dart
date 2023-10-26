@@ -62,8 +62,7 @@ class _HealthAppState extends State<HealthApp> {
     // requesting access to the data types before reading them
     // note that strictly speaking, the [permissions] are not
     // needed, since we only want READ access.
-    bool requested =
-        await health.requestAuthorization(types, permissions: permissions);
+    bool? requested = await health.requestAuthorization(types, permissions: permissions);
     print('requested: $requested');
 
     // If we are trying to read Step Count, Workout, Sleep or other data that requires
@@ -74,7 +73,7 @@ class _HealthAppState extends State<HealthApp> {
     await Permission.activityRecognition.request();
     await Permission.location.request();
 
-    if (requested) {
+    if (requested == true) {
       try {
         // fetch health data
         List<HealthDataPoint> healthData =
@@ -88,7 +87,7 @@ class _HealthAppState extends State<HealthApp> {
       }
 
       // filter out duplicates
-      _healthDataList = HealthFactory.removeDuplicates(_healthDataList);
+      _healthDataList = _healthDataList.removeDuplicates();
 
       // print the results
       _healthDataList.forEach((x) => print(x));
@@ -131,9 +130,9 @@ class _HealthAppState extends State<HealthApp> {
       HealthDataAccess.READ_WRITE,
       // HealthDataAccess.READ_WRITE,
     ];
-    late bool perm;
-    bool? hasPermissions =
-        await HealthFactory.hasPermissions(types, permissions: rights);
+    // ignore: unused_local_variable
+    late bool? perm;
+    bool? hasPermissions = await HealthFactory.hasPermissions(types, permissions: rights);
     if (hasPermissions == false) {
       perm = await health.requestAuthorization(types, permissions: permissions);
     }
@@ -141,16 +140,15 @@ class _HealthAppState extends State<HealthApp> {
     // Store a count of steps taken
     _nofSteps = Random().nextInt(10);
     bool success = await health.writeHealthData(
-        _nofSteps.toDouble(), HealthDataType.STEPS, earlier, now);
+        _nofSteps.toDouble(), HealthDataType.STEPS, earlier, now) ?? false;
 
     // Store a height
-    success &=
-        await health.writeHealthData(1.93, HealthDataType.HEIGHT, earlier, now);
+    success &= await health.writeHealthData(1.93, HealthDataType.HEIGHT, earlier, now) ?? false;
 
     // Store a Blood Glucose measurement
     _mgdl = Random().nextInt(10) * 1.0;
     success &= await health.writeHealthData(
-        _mgdl, HealthDataType.BLOOD_GLUCOSE, now, now);
+        _mgdl, HealthDataType.BLOOD_GLUCOSE, now, now) ?? false;
 
     // Store a workout eg. running
     success &= await health.writeWorkoutData(
@@ -194,7 +192,7 @@ class _HealthAppState extends State<HealthApp> {
     final now = DateTime.now();
     final midnight = DateTime(now.year, now.month, now.day);
 
-    bool requested = await health.requestAuthorization([HealthDataType.STEPS]);
+    bool requested = await health.requestAuthorization([HealthDataType.STEPS]) ?? false;
 
     if (requested) {
       try {
