@@ -317,7 +317,7 @@ class HealthFactory {
       .cast<Map<String, dynamic>>()
       .map((final data) => <String, dynamic>{
         'dataType': HealthDataType.fromTypeString(data['dataType'] as String),
-        'dataPoints': data,
+        'dataPoints': data['dataPoints'],
         'deduplicate': deduplicate,
       })
       .toList(growable: false);
