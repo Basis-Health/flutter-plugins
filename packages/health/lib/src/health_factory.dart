@@ -279,12 +279,12 @@ class HealthFactory {
         'endTime': endTime.millisecondsSinceEpoch,
       });
 
-      assert(fetchedDataPoints is List);
-      assert((fetchedDataPoints as List).every((element) => element is Map<String, dynamic>));
+      assert(fetchedDataPoints is List, 'Fetched data is not a list: ${fetchedDataPoints.runtimeType}');
+      assert((fetchedDataPoints as List).every((element) => element is Map), 'Not all elements are maps: ${fetchedDataPoints.map((e) => e.runtimeType)}');
 
       return <String, dynamic>{
         'dataType': e,
-        'dataPoints': (fetchedDataPoints as List?)?.cast<Map<String, dynamic>>() ?? const <Map<String, dynamic>>[],
+        'dataPoints': (fetchedDataPoints as List?)?.cast<Map>() ?? const <Map>[],
         'deduplicate': deduplicate,
       };
     }).toList(growable: false));
@@ -310,11 +310,10 @@ class HealthFactory {
       if (limit != null) 'limit': limit,
     });
 
-    assert(rawResults is List, 'Results is not a list');
-    assert((rawResults as List).every((element) => element is Map<String, dynamic>));
+    assert(rawResults is List, 'Results is not a list of maps: ${rawResults.runtimeType}');
+    assert((rawResults as List).every((element) => element is Map), 'Not all elements are maps: ${rawResults.map((e) => e.runtimeType)}');
 
     return (rawResults as List)
-      .cast<Map<String, dynamic>>()
       .map((final data) => <String, dynamic>{
         'dataType': HealthDataType.fromTypeString(data['dataType'] as String),
         'dataPoints': data['dataPoints'],
@@ -342,7 +341,7 @@ class HealthFactory {
 
     for (final message in messages) {
       final dataType = message['dataType'] as HealthDataType;
-      final dataPoints = message['dataPoints'] as List<dynamic>;
+      final dataPoints = message['dataPoints'] as List;
       final deduplicate = message['deduplicate'] as bool;
       final unit = dataTypeToUnit[dataType] ?? HealthDataUnit.UNKNOWN_UNIT;
   
