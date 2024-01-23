@@ -12,6 +12,8 @@ enum SHPMethodCall: String {
     case checkIfHealthDataAvailable
     case getBatchData
     case getData
+    case getBiologicalGender
+    case getDateOfBirth
     case getDevices
     case requestAuthorization
     case getTotalStepsInInterval

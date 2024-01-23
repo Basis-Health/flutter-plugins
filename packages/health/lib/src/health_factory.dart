@@ -68,11 +68,25 @@ class HealthFactory {
       throw ArgumentError('The lists of types and permissions must be of same length.');
     }
 
+    final copiedTypes = types.toList();
+    final permissionsInt = permissions?.map((e) => e.index).toList()
+      ?? List<int>.filled(types.length, HealthDataAccess.READ.index, growable: true);
+
+    // these values cannot be changed on iOS and will always return null
+    if (Platform.isIOS) {
+      for (var idx = 0; idx < copiedTypes.length; ) {
+        if (copiedTypes[idx] == HealthDataType.GENDER || copiedTypes[idx] == HealthDataType.DATE_OF_BIRTH) {
+          copiedTypes.removeAt(idx);
+          permissionsInt.removeAt(idx);
+        } else {
+          idx++;
+        }
+      }
+    }
+
     return await _channel.invokeMethod('hasPermissions', {
-      'types': types.map((type) => type.typeToString()).toList(growable: false),
-      'permissions': permissions == null
-        ? List<int>.filled(types.length, HealthDataAccess.READ.index, growable: true)
-        : permissions.map((permission) => permission.index).toList(growable: false),
+      'types': copiedTypes.map((type) => type.typeToString()).toList(growable: false),
+      'permissions': permissionsInt
     });
   }
 
@@ -108,14 +122,36 @@ class HealthFactory {
       throw ArgumentError('The length of [types] must be same as that of [permissions].');
     }
 
-    final bool? isAuthorized = await _channel.invokeMethod('requestAuthorization', {
-      'types': types.map((e) => healthEnumToString(e)).toList(growable: false),
-      'permissions': permissions == null
-        ? List<int>.filled(types.length, HealthDataAccess.READ.index,
-            growable: true)
-        : permissions.map((permission) => permission.index).toList(growable: false),
-    });
-    return isAuthorized;
+    if (Platform.isIOS) {
+      final sampleTypes = <HealthDataType>[];
+      final samplePermissions = <HealthDataAccess>[];
+      final objectTypes = <HealthDataType>[];
+      for (var idx = 0; idx < types.length; idx++) {
+        final type = types[idx];
+        if (type == HealthDataType.GENDER || type == HealthDataType.DATE_OF_BIRTH) {
+          objectTypes.add(type);
+        } else {
+          sampleTypes.add(type);
+          samplePermissions.add(permissions?[idx] ?? HealthDataAccess.READ);
+        }
+      }
+
+      final bool? isAuthorized = await _channel.invokeMethod('requestAuthorization', {
+        'types': sampleTypes.map((e) => e.name).toList(growable: false),
+        'objectTypes': objectTypes.map((e) => e.name).toList(growable: false),
+        'permissions': samplePermissions.map((e) => e.index).toList(growable: false)
+      });
+      return isAuthorized;
+    } else {
+      final bool? isAuthorized = await _channel.invokeMethod('requestAuthorization', {
+        'types': types.map((e) => e.name).toList(growable: false),
+        'permissions': permissions == null
+          ? List<int>.filled(types.length, HealthDataAccess.READ.index,
+              growable: true)
+          : permissions.map((permission) => permission.index).toList(growable: false),
+      });
+      return isAuthorized;
+    }
   }
 
   /// Saves health data into Apple Health or Google Fit.
@@ -158,7 +194,7 @@ class HealthFactory {
     return await _channel.invokeMethod('writeData', <String, dynamic>{
       'value': value,
       'dataTypeKey': type.typeToString(),
-      'dataUnitKey': (unit ?? dataTypeToUnit[type]!).typeToString(),
+      'dataUnitKey': (unit ?? type.unit).typeToString(),
       'startTime': startTime.millisecondsSinceEpoch,
       'endTime': endTime.millisecondsSinceEpoch
     });
@@ -274,7 +310,7 @@ class HealthFactory {
     return await Future.wait<Map<String, dynamic>>(dataType.map((e) async {
       final fetchedDataPoints = await _channel.invokeMethod('getData', <String, dynamic>{
         'dataTypeKey': e.typeToString(),
-        'dataUnitKey': dataTypeToUnit[e]!.typeToString(),
+        'dataUnitKey': e.unit.typeToString(),
         'startTime': startTime.millisecondsSinceEpoch,
         'endTime': endTime.millisecondsSinceEpoch,
       });
@@ -303,7 +339,7 @@ class HealthFactory {
     final rawResults = await _channel.invokeMethod('getBatchData', <String, dynamic>{
       'dataTypes': queries.map((e) => {
         'type': e.typeToString(),
-        'unit': dataTypeToUnit[e]?.typeToString(),
+        'unit': e.unit.typeToString(),
       }).toList(growable: false),
       'startTime': startTime.millisecondsSinceEpoch,
       'endTime': endTime.millisecondsSinceEpoch,
@@ -343,7 +379,7 @@ class HealthFactory {
       final dataType = message['dataType'] as HealthDataType;
       final dataPoints = message['dataPoints'] as List;
       final deduplicate = message['deduplicate'] as bool;
-      final unit = dataTypeToUnit[dataType] ?? HealthDataUnit.UNKNOWN_UNIT;
+      final unit = dataType.unit;
   
       Iterable<HealthDataPoint> list = dataPoints
         .map<HealthDataPoint>((final e) {
@@ -399,6 +435,24 @@ class HealthFactory {
     return stepsCount;
   }
 
+  Future<DateTime?> getDateOfBirth() async {
+    if (Platform.isIOS) {
+      final dob = await _channel.invokeMethod<String?>('getDateOfBirth');
+      return dob == null ? null : DateTime.parse(dob).toLocal();
+    } else {
+      return null;
+    }
+  }
+
+  Future<DeviceGender?> getBiologicalGender() async {
+    if (Platform.isIOS) {
+      final gender = await _channel.invokeMethod<String?>('getBiologicalGender');
+      return DeviceGender.values.firstWhere((e) => e.appleValue == gender, orElse: () => DeviceGender.unknown);
+    } else {
+      return null;
+    }
+  }
+
   /// Write workout data to Apple Health
   ///
   /// Returns true if successfully added workout data.
@@ -431,9 +485,9 @@ class HealthFactory {
       'startTime': start.millisecondsSinceEpoch,
       'endTime': end.millisecondsSinceEpoch,
       'totalEnergyBurned': totalEnergyBurned,
-      'totalEnergyBurnedUnit': healthEnumToString(totalEnergyBurnedUnit),
+      'totalEnergyBurnedUnit': totalEnergyBurnedUnit.name,
       'totalDistance': totalDistance,
-      'totalDistanceUnit': healthEnumToString(totalDistanceUnit),
+      'totalDistanceUnit': totalDistanceUnit.name,
     });
     return success ?? false;
   }

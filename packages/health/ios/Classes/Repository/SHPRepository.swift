@@ -14,7 +14,54 @@ class SHPRepository: SHPInterface {
     func checkIfHealthDataAvailable() -> Bool {
         return HKHealthStore.isHealthDataAvailable()
     }
-    
+
+    func getDateOfBirth(completion: @escaping (Date?) -> Void) {
+        let type = HKObjectType.characteristicType(forIdentifier: .dateOfBirth)!
+        store.requestAuthorization(toShare: nil, read: [type]) { (success, _) in
+            if success {
+                do {
+                    let dateOfBirth = try self.store.dateOfBirthComponents()
+                    let calendar = Calendar.current
+                    let date = calendar.date(from: dateOfBirth)
+                    completion(date)
+                } catch {
+                    completion(nil)
+                }
+            } else {
+                completion(nil)
+            }
+        }
+    }
+
+    func getBiologicalGender(completion: @escaping (String) -> Void) {
+        let type = HKObjectType.characteristicType(forIdentifier: .biologicalSex)!
+        store.requestAuthorization(toShare: nil, read: [type]) { (success, _) in
+            if success {
+                do {
+                    let biologicalSex = try self.store.biologicalSex().biologicalSex
+                    var genderString = "unknown"
+
+                    switch biologicalSex {
+                    case .male:
+                        genderString = "male"
+                    case .female:
+                        genderString = "female"
+                    case .other:
+                        genderString = "other"
+                    default:
+                        break
+                    }
+
+                    completion(genderString)
+                } catch {
+                    completion("unknown")
+                }
+            } else {
+                completion("unknown")
+            }
+        }
+    }
+
     func getBatchData(
         types: [SHPSampleQuery],
         startTime: Date,
@@ -50,6 +97,7 @@ class SHPRepository: SHPInterface {
             )
         }
     }
+
     
     @available(iOS 15.0, *)
     private func getBatchQueryUsingDescriptors(
@@ -227,11 +275,13 @@ class SHPRepository: SHPInterface {
     
     func requestAuthorization(
         types: [SHPSampleType],
+        objectTypes: [SHPObjectType],
         permissions: [Int],
         completion: @escaping (Bool) -> Void
     ) {
-        var read = Set<HKSampleType>()
+        var read = Set<HKObjectType>()
         var write = Set<HKSampleType>()
+
         for (index, type) in types.enumerated() {
             if let sampleType = type.sampleType {
                 let access = permissions[index]
@@ -246,6 +296,10 @@ class SHPRepository: SHPInterface {
                 }
             }
         }
+        for type in objectTypes {
+            read.insert(type.objectType)
+        }
+    
         store.requestAuthorization(toShare: write, read: read) { (success, _) in
             completion(success)
         }

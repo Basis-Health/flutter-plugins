@@ -36,6 +36,7 @@ protocol SHPInterface {
     
     func requestAuthorization(
         types: [SHPSampleType],
+        objectTypes: [SHPObjectType],
         permissions: [Int],
         completion: @escaping (Bool) -> Void
     )

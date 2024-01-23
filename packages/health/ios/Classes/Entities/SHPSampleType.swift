@@ -8,6 +8,20 @@
 import Foundation
 import HealthKit
 
+enum SHPObjectType: String, CaseIterable, Codable {
+    case DATE_OF_BIRTH
+    case GENDER
+
+    var objectType: HKObjectType {
+        switch (self) {
+        case .DATE_OF_BIRTH:
+            return .characteristicType(forIdentifier: .dateOfBirth)!
+        case .GENDER:
+            return .characteristicType(forIdentifier: .biologicalSex)!
+        }
+    }
+}
+
 enum SHPSampleType: String, CaseIterable, Codable {
     case ACTIVE_ENERGY_BURNED
     case AUDIOGRAM
@@ -44,6 +58,7 @@ enum SHPSampleType: String, CaseIterable, Codable {
     case EXERCISE_TIME
     case WORKOUT
     case HEADACHE
+    case VO2MAX
     case UNKNOWN
     
     var sampleType: HKSampleType? {
@@ -54,6 +69,8 @@ enum SHPSampleType: String, CaseIterable, Codable {
             return .audiogramSampleType()
         case .BASAL_ENERGY_BURNED:
             return .quantityType(forIdentifier: .basalEnergyBurned)
+        case .VO2MAX:
+            return .quantityType(forIdentifier: .vo2Max)
         case .BLOOD_GLUCOSE:
             return .quantityType(forIdentifier: .bloodGlucose)
         case .BLOOD_OXYGEN:
@@ -135,6 +152,8 @@ enum SHPSampleType: String, CaseIterable, Codable {
             return .DECIBEL_HEARING_LEVEL
         case .BASAL_ENERGY_BURNED:
             return .KILOCALORIE
+        case .VO2MAX:
+            return .MILLILITER_PER_KILOGRAM_PER_MINUTE
         case .BLOOD_GLUCOSE:
             return .MILLIGRAM_PER_DECILITER
         case .BLOOD_OXYGEN:

@@ -56,6 +56,7 @@ enum SHPUnit: String, Codable {
     case MILLIGRAM_PER_DECILITER
     case SLEEP
     case HEADACHE
+    case MILLILITER_PER_KILOGRAM_PER_MINUTE
     case UNKNOWN_UNIT
     case NO_UNIT
     
@@ -67,6 +68,10 @@ enum SHPUnit: String, Codable {
             return HKUnit.gram()
         case .KILOGRAM:
             return HKUnit.gramUnit(with: .kilo)
+        case .MILLILITER_PER_KILOGRAM_PER_MINUTE:
+            let kgmin = HKUnit.gramUnit(with: .kilo).unitMultiplied(by: .minute())
+            let mL = HKUnit.literUnit(with: .milli)
+            return mL.unitDivided(by: kgmin)
         case .OUNCE:
             return .ounce()
         case .POUND:

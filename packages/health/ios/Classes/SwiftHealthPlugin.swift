@@ -20,6 +20,10 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
             checkIfHealthDataAvailable(call: call, result: result)
         case .getData:
             try! getData(call: call, result: result)
+        case .getBiologicalGender:
+            getBiologicalGender(call: call, result: result)
+        case .getDateOfBirth:
+            getDateOfBirth(call: call, result: result)
         case .getBatchData:
             try! getBatchData(call: call, result: result)
         case .getDevices:
@@ -45,6 +49,28 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
         result(repository.checkIfHealthDataAvailable())
     }
     
+    func getBiologicalGender(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        repository.getBiologicalGender() { success in
+            DispatchQueue.main.async { result(success) }
+        }
+    }
+
+    func getDateOfBirth(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        repository.getDateOfBirth() { success in
+            DispatchQueue.main.async {
+                if let date = success {
+                    // Date is not nil, format it and send back
+                    let formattedDate = ISO8601DateFormatter().string(from: date)
+                    result(formattedDate)
+                } else {
+                    // Date is nil, send back null
+                    result(nil)
+                }
+            }
+        }
+    }
+
+
     func hasPermissions(call: FlutterMethodCall, result: @escaping FlutterResult) throws {
         let arguments = call.arguments as? NSDictionary
         guard let typeStrings = arguments?["types"] as? Array<String>,
@@ -58,15 +84,18 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
     func requestAuthorization(call: FlutterMethodCall, result: @escaping FlutterResult) throws {
         guard let arguments = call.arguments as? NSDictionary,
               let typeStrings = arguments["types"] as? Array<String>,
+              let objectTypeStrings = arguments["objectTypes"] as? Array<String>,
               let permissions = arguments["permissions"] as? Array<Int>,
               permissions.count == typeStrings.count
         else { throw PluginError(message: "Invalid Arguments!") }
         
         let types = typeStrings.compactMap({ SHPSampleType(rawValue: $0) })
-        repository.requestAuthorization(types: types, permissions: permissions) { success in
+        let objectTypes = objectTypeStrings.compactMap({ SHPObjectType(rawValue: $0) })
+        repository.requestAuthorization(types: types, objectTypes: objectTypes, permissions: permissions) { success in
             DispatchQueue.main.async { result(success) }
         }
     }
+
     
     func writeData(call: FlutterMethodCall, result: @escaping FlutterResult) throws {
         guard let arguments = call.arguments as? NSDictionary,

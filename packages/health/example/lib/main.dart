@@ -43,17 +43,9 @@ class _HealthAppState extends State<HealthApp> {
       HealthDataType.BLOOD_GLUCOSE,
       HealthDataType.WORKOUT,
       HealthDataType.SLEEP,
+      HealthDataType.VO2MAX,
       // Uncomment these lines on iOS - only available on iOS
       // HealthDataType.AUDIOGRAM
-    ];
-
-    // with coresponsing permissions
-    final permissions = [
-      HealthDataAccess.READ,
-      HealthDataAccess.READ,
-      HealthDataAccess.READ,
-      HealthDataAccess.READ,
-      // HealthDataAccess.READ,
     ];
 
     // get data within the last 24 hours
@@ -62,7 +54,7 @@ class _HealthAppState extends State<HealthApp> {
     // requesting access to the data types before reading them
     // note that strictly speaking, the [permissions] are not
     // needed, since we only want READ access.
-    bool? requested = await health.requestAuthorization(types, permissions: permissions);
+    bool? requested = await health.requestAuthorization(types);
     print('requested: $requested');
 
     // If we are trying to read Step Count, Workout, Sleep or other data that requires

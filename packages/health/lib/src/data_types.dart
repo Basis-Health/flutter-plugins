@@ -1,66 +1,72 @@
 part of health;
 
-/// Extracts the string value from an enum
-String healthEnumToString(enumItem) => enumItem.toString().split('.').last;
-
-late final Map<String, HealthWorkoutActivityType> _healthWorkoutActivityTypeReverse = Map.fromEntries(
+final Map<String, HealthWorkoutActivityType> _healthWorkoutActivityTypeReverse = Map.fromEntries(
   HealthWorkoutActivityType.values.map((e) => MapEntry(e.typeToString(), e)),
 );
-late final Map<String, HealthDataType> _healthDataTypeReverse = Map.fromEntries(
+final Map<String, HealthDataType> _healthDataTypeReverse = Map.fromEntries(
   HealthDataType.values.map((e) => MapEntry(e.typeToString(), e)),
 );
-late final Map<String, HealthDataUnit> _healthDataUnitReverse = Map.fromEntries(
+final Map<String, HealthDataUnit> _healthDataUnitReverse = Map.fromEntries(
   HealthDataUnit.values.map((e) => MapEntry(e.typeToString(), e)),
 );
 
 /// List of all available data types.
 enum HealthDataType {
-  ACTIVE_ENERGY_BURNED,
-  AUDIOGRAM,
-  BASAL_ENERGY_BURNED,
-  BLOOD_GLUCOSE,
-  BLOOD_OXYGEN,
-  BLOOD_PRESSURE_DIASTOLIC,
-  BLOOD_PRESSURE_SYSTOLIC,
-  BODY_FAT_PERCENTAGE,
-  BODY_MASS_INDEX,
-  BODY_TEMPERATURE,
-  DIETARY_CARBS_CONSUMED,
-  DIETARY_ENERGY_CONSUMED,
-  DIETARY_FATS_CONSUMED,
-  DIETARY_PROTEIN_CONSUMED,
-  FORCED_EXPIRATORY_VOLUME,
-  HEART_RATE,
-  HEART_RATE_VARIABILITY_SDNN,
-  HEIGHT,
-  RESTING_HEART_RATE,
-  STEPS,
-  WAIST_CIRCUMFERENCE,
-  WALKING_HEART_RATE,
-  WEIGHT,
-  DISTANCE_WALKING_RUNNING,
-  FLIGHTS_CLIMBED,
-  MOVE_MINUTES,
-  DISTANCE_DELTA,
-  MINDFULNESS,
-  WATER,
-  SLEEP,
-  EXERCISE_TIME,
-  WORKOUT,
-  HEADACHE,
+  ACTIVE_ENERGY_BURNED(HealthDataUnit.KILOCALORIE),
+  AUDIOGRAM(HealthDataUnit.DECIBEL_HEARING_LEVEL),
+  BASAL_ENERGY_BURNED(HealthDataUnit.KILOCALORIE),
+  BLOOD_GLUCOSE(HealthDataUnit.MILLIGRAM_PER_DECILITER),
+  BLOOD_OXYGEN(HealthDataUnit.PERCENT),
+  BLOOD_PRESSURE_DIASTOLIC(HealthDataUnit.MILLIMETER_OF_MERCURY),
+  BLOOD_PRESSURE_SYSTOLIC(HealthDataUnit.MILLIMETER_OF_MERCURY),
+  BODY_FAT_PERCENTAGE(HealthDataUnit.PERCENT),
+  BODY_MASS_INDEX(HealthDataUnit.NO_UNIT),
+  BODY_TEMPERATURE(HealthDataUnit.DEGREE_CELSIUS),
+  DIETARY_CARBS_CONSUMED(HealthDataUnit.GRAM),
+  DIETARY_ENERGY_CONSUMED(HealthDataUnit.KILOCALORIE),
+  DIETARY_FATS_CONSUMED(HealthDataUnit.GRAM),
+  DIETARY_PROTEIN_CONSUMED(HealthDataUnit.GRAM),
+  FORCED_EXPIRATORY_VOLUME(HealthDataUnit.LITER),
+  HEART_RATE(HealthDataUnit.BEATS_PER_MINUTE),
+  HEART_RATE_VARIABILITY_SDNN(HealthDataUnit.MILLISECOND),
+  HEIGHT(HealthDataUnit.METER),
+  RESTING_HEART_RATE(HealthDataUnit.BEATS_PER_MINUTE),
+  STEPS(HealthDataUnit.COUNT),
+  WAIST_CIRCUMFERENCE(HealthDataUnit.METER),
+  WALKING_HEART_RATE(HealthDataUnit.BEATS_PER_MINUTE),
+  WEIGHT(HealthDataUnit.KILOGRAM),
+  DISTANCE_WALKING_RUNNING(HealthDataUnit.METER),
+  FLIGHTS_CLIMBED(HealthDataUnit.COUNT),
+  MOVE_MINUTES(HealthDataUnit.MINUTE),
+  DISTANCE_DELTA(HealthDataUnit.METER),
+  MINDFULNESS(HealthDataUnit.MINUTE),
+  WATER(HealthDataUnit.LITER),
+  SLEEP(HealthDataUnit.SLEEP),
+  EXERCISE_TIME(HealthDataUnit.MINUTE),
+  WORKOUT(HealthDataUnit.NO_UNIT),
+  HEADACHE(HealthDataUnit.HEADACHE),
+  VO2MAX(HealthDataUnit.MILLILITER_PER_KILOGRAM_PER_MINUTE),
+  DATE_OF_BIRTH(HealthDataUnit.NO_UNIT),
+  GENDER(HealthDataUnit.NO_UNIT),
 
   // Heart Rate events (specific to Apple Watch)
-  HIGH_HEART_RATE_EVENT,
-  LOW_HEART_RATE_EVENT,
-  IRREGULAR_HEART_RATE_EVENT,
-  ELECTRODERMAL_ACTIVITY;
+  HIGH_HEART_RATE_EVENT(HealthDataUnit.NO_UNIT),
+  LOW_HEART_RATE_EVENT(HealthDataUnit.NO_UNIT),
+  IRREGULAR_HEART_RATE_EVENT(HealthDataUnit.NO_UNIT),
+  ELECTRODERMAL_ACTIVITY(HealthDataUnit.SIEMEN),
+  ;
+
+  final HealthDataUnit unit;
+
+  const HealthDataType([this.unit = HealthDataUnit.UNKNOWN_UNIT]);
 
   /// Returns the string representation of the enum
   /// e.g. [HealthDataType.BLOOD_GLUCOSE] -> 'BLOOD_GLUCOSE'
-  String typeToString() => healthEnumToString(this);
+  String typeToString() => name;
 
   static HealthDataType fromTypeString(String v) => _healthDataTypeReverse[v]!;
 }
+
 
 enum HealthDataAccess {
   READ,
@@ -81,6 +87,17 @@ enum DeviceSleepStage {
   final int appleValue;
 }
 
+enum DeviceGender {
+  unknown('unknown'),
+  male('male'),
+  female('female'),
+  other('other');
+
+  final String appleValue;
+
+  const DeviceGender(this.appleValue);
+}
+
 enum DeviceHeadache {
   HEADACHE_UNSPECIFIED(0),
   HEADACHE_NOT_PRESENT(1),
@@ -94,9 +111,12 @@ enum DeviceHeadache {
 
 /// List of data types available on iOS
 const Set<HealthDataType> dataTypeKeysIOS = {
+  HealthDataType.DATE_OF_BIRTH,
+  HealthDataType.GENDER,
   HealthDataType.ACTIVE_ENERGY_BURNED,
   HealthDataType.AUDIOGRAM,
   HealthDataType.BASAL_ENERGY_BURNED,
+  HealthDataType.VO2MAX,
   HealthDataType.BLOOD_GLUCOSE,
   HealthDataType.BLOOD_OXYGEN,
   HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
@@ -339,51 +359,6 @@ const Set<HealthWorkoutActivityType> activityTypesAndroid = const {
   HealthWorkoutActivityType.OTHER,
 };
 
-/// Maps a [HealthDataType] to a [HealthDataUnit].
-const Map<HealthDataType, HealthDataUnit> dataTypeToUnit = {
-  HealthDataType.ACTIVE_ENERGY_BURNED: HealthDataUnit.KILOCALORIE,
-  HealthDataType.AUDIOGRAM: HealthDataUnit.DECIBEL_HEARING_LEVEL,
-  HealthDataType.BASAL_ENERGY_BURNED: HealthDataUnit.KILOCALORIE,
-  HealthDataType.BLOOD_GLUCOSE: HealthDataUnit.MILLIGRAM_PER_DECILITER,
-  HealthDataType.BLOOD_OXYGEN: HealthDataUnit.PERCENT,
-  HealthDataType.BLOOD_PRESSURE_DIASTOLIC: HealthDataUnit.MILLIMETER_OF_MERCURY,
-  HealthDataType.BLOOD_PRESSURE_SYSTOLIC: HealthDataUnit.MILLIMETER_OF_MERCURY,
-  HealthDataType.BODY_FAT_PERCENTAGE: HealthDataUnit.PERCENT,
-  HealthDataType.BODY_MASS_INDEX: HealthDataUnit.NO_UNIT,
-  HealthDataType.BODY_TEMPERATURE: HealthDataUnit.DEGREE_CELSIUS,
-  HealthDataType.DIETARY_CARBS_CONSUMED: HealthDataUnit.GRAM,
-  HealthDataType.DIETARY_ENERGY_CONSUMED: HealthDataUnit.KILOCALORIE,
-  HealthDataType.DIETARY_FATS_CONSUMED: HealthDataUnit.GRAM,
-  HealthDataType.DIETARY_PROTEIN_CONSUMED: HealthDataUnit.GRAM,
-  HealthDataType.ELECTRODERMAL_ACTIVITY: HealthDataUnit.SIEMEN,
-  HealthDataType.FORCED_EXPIRATORY_VOLUME: HealthDataUnit.LITER,
-  HealthDataType.HEART_RATE: HealthDataUnit.BEATS_PER_MINUTE,
-  HealthDataType.HEIGHT: HealthDataUnit.METER,
-  HealthDataType.RESTING_HEART_RATE: HealthDataUnit.BEATS_PER_MINUTE,
-  HealthDataType.STEPS: HealthDataUnit.COUNT,
-  HealthDataType.WAIST_CIRCUMFERENCE: HealthDataUnit.METER,
-  HealthDataType.WALKING_HEART_RATE: HealthDataUnit.BEATS_PER_MINUTE,
-  HealthDataType.WEIGHT: HealthDataUnit.KILOGRAM,
-  HealthDataType.DISTANCE_WALKING_RUNNING: HealthDataUnit.METER,
-  HealthDataType.FLIGHTS_CLIMBED: HealthDataUnit.COUNT,
-  HealthDataType.MOVE_MINUTES: HealthDataUnit.MINUTE,
-  HealthDataType.DISTANCE_DELTA: HealthDataUnit.METER,
-
-  HealthDataType.WATER: HealthDataUnit.LITER,
-  HealthDataType.SLEEP: HealthDataUnit.SLEEP,
-  HealthDataType.MINDFULNESS: HealthDataUnit.MINUTE,
-  HealthDataType.EXERCISE_TIME: HealthDataUnit.MINUTE,
-  HealthDataType.WORKOUT: HealthDataUnit.NO_UNIT,
-
-  HealthDataType.HEADACHE: HealthDataUnit.HEADACHE,
-
-  // Heart Rate events (specific to Apple Watch)
-  HealthDataType.HIGH_HEART_RATE_EVENT: HealthDataUnit.NO_UNIT,
-  HealthDataType.LOW_HEART_RATE_EVENT: HealthDataUnit.NO_UNIT,
-  HealthDataType.IRREGULAR_HEART_RATE_EVENT: HealthDataUnit.NO_UNIT,
-  HealthDataType.HEART_RATE_VARIABILITY_SDNN: HealthDataUnit.MILLISECOND,
-};
-
 const PlatformTypeJsonValue = {
   PlatformType.IOS: 'ios', PlatformType.ANDROID: 'android',
 };
@@ -437,6 +412,9 @@ enum HealthDataUnit {
   SLEEP,
   HEADACHE,
 
+  // vo2max
+  MILLILITER_PER_KILOGRAM_PER_MINUTE,
+
   // Energy units
   JOULE,
   KILOCALORIE,
@@ -475,7 +453,7 @@ enum HealthDataUnit {
 
   /// Returns the string representation of the enum
   /// e.g. [HealthDataUnit.LITER] -> 'LITER'
-  String typeToString() => healthEnumToString(this);
+  String typeToString() => name;
 
   static HealthDataUnit fromTypeString(String type) => _healthDataUnitReverse[type]!;
 }
@@ -629,7 +607,7 @@ enum HealthWorkoutActivityType {
 
   /// Returns the string representation of the enum
   /// e.g. [HealthWorkoutActivityType.CYCLING] -> 'CYCLING'
-  String typeToString() => healthEnumToString(this);
+  String typeToString() => name;
 
   static HealthWorkoutActivityType fromTypeString(String type) => _healthWorkoutActivityTypeReverse[type]!;
 }
