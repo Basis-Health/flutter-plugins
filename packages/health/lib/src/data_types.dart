@@ -75,35 +75,56 @@ enum HealthDataAccess {
 }
 
 enum DeviceSleepStage {
-  SLEEP_IN_BED(0),
-  SLEEP_ASLEEP(1),
-  SLEEP_AWAKE(2),
-  SLEEP_CORE(3),
-  SLEEP_DEEP(4),
-  SLEEP_REM(5);
+  SLEEP_IN_BED(SLEEP_IN_BED_APPLE),
+  SLEEP_ASLEEP(SLEEP_ASLEEP_APPLE),
+  SLEEP_AWAKE(SLEEP_AWAKE_APPLE),
+  SLEEP_CORE(SLEEP_CORE_APPLE),
+  SLEEP_DEEP(SLEEP_DEEP_APPLE),
+  SLEEP_REM(SLEEP_REM_APPLE);
+
+  static const SLEEP_IN_BED_APPLE = 0;
+  static const SLEEP_ASLEEP_APPLE = 1;
+  static const SLEEP_AWAKE_APPLE = 2;
+  static const SLEEP_CORE_APPLE = 3;
+  static const SLEEP_DEEP_APPLE = 4;
+  static const SLEEP_REM_APPLE = 5;
 
   const DeviceSleepStage(this.appleValue);
 
   final int appleValue;
 }
 
+
 enum DeviceGender {
-  unknown('unknown'),
-  male('male'),
-  female('female'),
-  other('other');
+  unknown(UNKNOWN_APPLE),
+  male(MALE_APPLE),
+  female(FEMALE_APPLE),
+  other(OTHER_APPLE);
+
+  static const UNKNOWN_APPLE = 'unknown';
+  static const MALE_APPLE = 'male';
+  static const FEMALE_APPLE = 'female';
+  static const OTHER_APPLE = 'other';
+
 
   final String appleValue;
+
 
   const DeviceGender(this.appleValue);
 }
 
 enum DeviceHeadache {
-  HEADACHE_UNSPECIFIED(0),
-  HEADACHE_NOT_PRESENT(1),
-  HEADACHE_MILD(2),
-  HEADACHE_MODERATE(3),
-  HEADACHE_SEVERE(4);
+  HEADACHE_UNSPECIFIED(HEADACHE_UNSPECIFIED_APPLE),
+  HEADACHE_NOT_PRESENT(HEADACHE_NOT_PRESENT_APPLE),
+  HEADACHE_MILD(HEADACHE_MILD_APPLE),
+  HEADACHE_MODERATE(HEADACHE_MODERATE_APPLE),
+  HEADACHE_SEVERE(HEADACHE_SEVERE_APPLE);
+
+  static const HEADACHE_UNSPECIFIED_APPLE = 0;
+  static const HEADACHE_NOT_PRESENT_APPLE = 1;
+  static const HEADACHE_MILD_APPLE = 2;
+  static const HEADACHE_MODERATE_APPLE = 3;
+  static const HEADACHE_SEVERE_APPLE = 4;
 
   const DeviceHeadache(this.appleValue);
   final int appleValue;
