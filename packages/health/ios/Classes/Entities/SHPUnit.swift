@@ -9,6 +9,8 @@ import Foundation
 import HealthKit
 
 enum SHPUnit: String, Codable {
+    case MICROGRAM
+    case MILLIGRAM
     case GRAM
     case KILOGRAM
     case OUNCE
@@ -64,6 +66,10 @@ enum SHPUnit: String, Codable {
         switch self {
         case .ATMOSPHERE:
             return HKUnit.atmosphere()
+        case .MICROGRAM:
+            return HKUnit.gramUnit(with: .micro)
+        case .MILLIGRAM:
+            return HKUnit.gramUnit(with: .milli)
         case .GRAM:
             return HKUnit.gram()
         case .KILOGRAM:

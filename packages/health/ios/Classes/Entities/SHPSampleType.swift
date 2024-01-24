@@ -33,10 +33,45 @@ enum SHPSampleType: String, CaseIterable, Codable {
     case BODY_FAT_PERCENTAGE
     case BODY_MASS_INDEX
     case BODY_TEMPERATURE
-    case DIETARY_CARBS_CONSUMED
-    case DIETARY_ENERGY_CONSUMED
-    case DIETARY_FATS_CONSUMED
-    case DIETARY_PROTEIN_CONSUMED
+    case DIETARY_ENERGY
+    case DIETARY_CARBS
+    case DIETARY_FIBER
+    case DIETARY_SUGAR
+    case DIETARY_FAT
+    case DIETARY_FAT_MONOUNSATURATED
+    case DIETARY_FAT_POLYUNSATURATED
+    case DIETARY_FAT_SATURATED
+    case DIETARY_CHOLESTEROL
+    case DIETARY_PROTEIN
+    case DIETARY_VITAMIN_A
+    case DIETARY_THIAMIN
+    case DIETARY_RIBOFLAVIN
+    case DIETARY_NIACIN
+    case DIETARY_PANTOTHENIC_ACID
+    case DIETARY_VITAMIN_B6
+    case DIETARY_BIOTIN
+    case DIETARY_VITAMIN_B12
+    case DIETARY_VITAMIN_C
+    case DIETARY_VITAMIN_D
+    case DIETARY_VITAMIN_E
+    case DIETARY_VITAMIN_K
+    case DIETARY_FOLATE
+    case DIETARY_CALCIUM
+    case DIETARY_CHLORIDE
+    case DIETARY_IRON
+    case DIETARY_MAGNESIUM
+    case DIETARY_PHOSPHORUS
+    case DIETARY_POTASSIUM
+    case DIETARY_SODIUM
+    case DIETARY_ZINC
+    case DIETARY_WATER
+    case DIETARY_CAFFEINE
+    case DIETARY_CHROMIUM
+    case DIETARY_COPPER
+    case DIETARY_IODINE
+    case DIETARY_MANGANESE
+    case DIETARY_MOLYBDENUM
+    case DIETARY_SELENIUM
     case ELECTRODERMAL_ACTIVITY
     case FORCED_EXPIRATORY_VOLUME
     case HEART_RATE
@@ -52,7 +87,6 @@ enum SHPSampleType: String, CaseIterable, Codable {
     case WEIGHT
     case DISTANCE_WALKING_RUNNING
     case FLIGHTS_CLIMBED
-    case WATER
     case MINDFULNESS
     case SLEEP
     case EXERCISE_TIME
@@ -85,14 +119,6 @@ enum SHPSampleType: String, CaseIterable, Codable {
             return .quantityType(forIdentifier: .bodyMassIndex)
         case .BODY_TEMPERATURE:
             return .quantityType(forIdentifier: .bodyTemperature)
-        case .DIETARY_CARBS_CONSUMED:
-            return .quantityType(forIdentifier: .dietaryCarbohydrates)
-        case .DIETARY_ENERGY_CONSUMED:
-            return .quantityType(forIdentifier: .dietaryEnergyConsumed)
-        case .DIETARY_FATS_CONSUMED:
-            return .quantityType(forIdentifier: .dietaryFatTotal)
-        case .DIETARY_PROTEIN_CONSUMED:
-            return .quantityType(forIdentifier: .dietaryProtein)
         case .ELECTRODERMAL_ACTIVITY:
             return .quantityType(forIdentifier: .electrodermalActivity)
         case .FORCED_EXPIRATORY_VOLUME:
@@ -129,8 +155,84 @@ enum SHPSampleType: String, CaseIterable, Codable {
             return .quantityType(forIdentifier: .distanceWalkingRunning)
         case .FLIGHTS_CLIMBED:
             return .quantityType(forIdentifier: .flightsClimbed)
-        case .WATER:
+        case .DIETARY_ENERGY:
+            return .quantityType(forIdentifier: .dietaryEnergyConsumed)
+        case .DIETARY_CARBS:
+            return .quantityType(forIdentifier: .dietaryCarbohydrates)
+        case .DIETARY_FIBER:
+            return .quantityType(forIdentifier: .dietaryFiber)
+        case .DIETARY_SUGAR:
+            return .quantityType(forIdentifier: .dietarySugar)
+        case .DIETARY_FAT:
+            return .quantityType(forIdentifier: .dietaryFatTotal)
+        case .DIETARY_FAT_MONOUNSATURATED:
+            return .quantityType(forIdentifier: .dietaryFatMonounsaturated)
+        case .DIETARY_FAT_POLYUNSATURATED:
+            return .quantityType(forIdentifier: .dietaryFatPolyunsaturated)
+        case .DIETARY_FAT_SATURATED:
+            return .quantityType(forIdentifier: .dietaryFatSaturated)
+        case .DIETARY_CHOLESTEROL:
+            return .quantityType(forIdentifier: .dietaryCholesterol)
+        case .DIETARY_PROTEIN:
+            return .quantityType(forIdentifier: .dietaryProtein)
+        case .DIETARY_VITAMIN_A:
+            return .quantityType(forIdentifier: .dietaryVitaminA)
+        case .DIETARY_THIAMIN:
+            return .quantityType(forIdentifier: .dietaryThiamin)
+        case .DIETARY_RIBOFLAVIN:
+            return .quantityType(forIdentifier: .dietaryRiboflavin)
+        case .DIETARY_NIACIN:
+            return .quantityType(forIdentifier: .dietaryNiacin)
+        case .DIETARY_PANTOTHENIC_ACID:
+            return .quantityType(forIdentifier: .dietaryPantothenicAcid)
+        case .DIETARY_VITAMIN_B6:
+            return .quantityType(forIdentifier: .dietaryVitaminB6)
+        case .DIETARY_BIOTIN:
+            return .quantityType(forIdentifier: .dietaryBiotin)
+        case .DIETARY_VITAMIN_B12:
+            return .quantityType(forIdentifier: .dietaryVitaminB12)
+        case .DIETARY_VITAMIN_C:
+            return .quantityType(forIdentifier: .dietaryVitaminC)
+        case .DIETARY_VITAMIN_D:
+            return .quantityType(forIdentifier: .dietaryVitaminD)
+        case .DIETARY_VITAMIN_E:
+            return .quantityType(forIdentifier: .dietaryVitaminE)
+        case .DIETARY_VITAMIN_K:
+            return .quantityType(forIdentifier: .dietaryVitaminK)
+        case .DIETARY_FOLATE:
+            return .quantityType(forIdentifier: .dietaryFolate)
+        case .DIETARY_CALCIUM:
+            return .quantityType(forIdentifier: .dietaryCalcium)
+        case .DIETARY_CHLORIDE:
+            return .quantityType(forIdentifier: .dietaryChloride)
+        case .DIETARY_IRON:
+            return .quantityType(forIdentifier: .dietaryIron)
+        case .DIETARY_MAGNESIUM:
+            return .quantityType(forIdentifier: .dietaryMagnesium)
+        case .DIETARY_PHOSPHORUS:
+            return .quantityType(forIdentifier: .dietaryPhosphorus)
+        case .DIETARY_POTASSIUM:
+            return .quantityType(forIdentifier: .dietaryPotassium)
+        case .DIETARY_SODIUM:
+            return .quantityType(forIdentifier: .dietarySodium)
+        case .DIETARY_ZINC:
+            return .quantityType(forIdentifier: .dietaryZinc)
+        case .DIETARY_WATER:
             return .quantityType(forIdentifier: .dietaryWater)
+        case .DIETARY_CAFFEINE:
+            return .quantityType(forIdentifier: .dietaryCaffeine)
+        case .DIETARY_CHROMIUM:
+            return .quantityType(forIdentifier: .dietaryChromium)
+        case .DIETARY_COPPER:
+            return .quantityType(forIdentifier: .dietaryCopper)
+        case .DIETARY_IODINE:
+            return .quantityType(forIdentifier: .dietaryIodine)
+        case .DIETARY_MANGANESE:
+            return .quantityType(forIdentifier: .dietaryManganese)
+        case .DIETARY_MOLYBDENUM:
+            return .quantityType(forIdentifier: .dietaryMolybdenum)
+        case .DIETARY_SELENIUM:
+            return .quantityType(forIdentifier: .dietarySelenium)
         case .MINDFULNESS:
             return .categoryType(forIdentifier: .mindfulSession)
         case .SLEEP:
@@ -139,7 +241,7 @@ enum SHPSampleType: String, CaseIterable, Codable {
             return .quantityType(forIdentifier: .appleExerciseTime)
         case .WORKOUT:
             return .workoutType()
-        default:
+        case .UNKNOWN:
             return nil
         }
     }
@@ -166,14 +268,84 @@ enum SHPSampleType: String, CaseIterable, Codable {
             return .PERCENT
         case .BODY_TEMPERATURE:
             return .DEGREE_CELSIUS
-        case .DIETARY_CARBS_CONSUMED:
-            return .GRAM
-        case .DIETARY_ENERGY_CONSUMED:
+        case .DIETARY_ENERGY:
             return .KILOCALORIE
-        case .DIETARY_FATS_CONSUMED:
+        case .DIETARY_CARBS:
             return .GRAM
-        case .DIETARY_PROTEIN_CONSUMED:
+        case .DIETARY_FIBER:
             return .GRAM
+        case .DIETARY_SUGAR:
+            return .GRAM
+        case .DIETARY_FAT:
+            return .GRAM
+        case .DIETARY_FAT_MONOUNSATURATED:
+            return .GRAM
+        case .DIETARY_FAT_POLYUNSATURATED:
+            return .GRAM
+        case .DIETARY_FAT_SATURATED:
+            return .GRAM
+        case .DIETARY_CHOLESTEROL:
+            return .MILLIGRAM
+        case .DIETARY_PROTEIN:
+            return .GRAM
+        case .DIETARY_VITAMIN_A:
+            return .MICROGRAM
+        case .DIETARY_THIAMIN:
+            return .MILLIGRAM
+        case .DIETARY_RIBOFLAVIN:
+            return .MILLIGRAM
+        case .DIETARY_NIACIN:
+            return .MILLIGRAM
+        case .DIETARY_PANTOTHENIC_ACID:
+            return .MILLIGRAM
+        case .DIETARY_VITAMIN_B6:
+            return .MILLIGRAM
+        case .DIETARY_BIOTIN:
+            return .MICROGRAM
+        case .DIETARY_VITAMIN_B12:
+            return .MICROGRAM
+        case .DIETARY_VITAMIN_C:
+            return .MILLIGRAM
+        case .DIETARY_VITAMIN_D:
+            return .MICROGRAM
+        case .DIETARY_VITAMIN_E:
+            return .MILLIGRAM
+        case .DIETARY_VITAMIN_K:
+            return .MICROGRAM
+        case .DIETARY_FOLATE:
+            return .MICROGRAM
+        case .DIETARY_CALCIUM:
+            return .MILLIGRAM
+        case .DIETARY_CHLORIDE:
+            return .MILLIGRAM
+        case .DIETARY_IRON:
+            return .MILLIGRAM
+        case .DIETARY_MAGNESIUM:
+            return .MILLIGRAM
+        case .DIETARY_PHOSPHORUS:
+            return .MILLIGRAM
+        case .DIETARY_POTASSIUM:
+            return .MILLIGRAM
+        case .DIETARY_SODIUM:
+            return .MILLIGRAM
+        case .DIETARY_ZINC:
+            return .MILLIGRAM
+        case .DIETARY_WATER:
+            return .MILLILITER
+        case .DIETARY_CAFFEINE:
+            return .MILLIGRAM
+        case .DIETARY_CHROMIUM:
+            return .MICROGRAM
+        case .DIETARY_COPPER:
+            return .MILLIGRAM
+        case .DIETARY_IODINE:
+            return .MICROGRAM
+        case .DIETARY_MANGANESE:
+            return .MILLIGRAM
+        case .DIETARY_MOLYBDENUM:
+            return .MICROGRAM
+        case .DIETARY_SELENIUM:
+            return .MICROGRAM
         case .ELECTRODERMAL_ACTIVITY:
             return .SIEMEN
         case .FORCED_EXPIRATORY_VOLUME:
@@ -194,8 +366,6 @@ enum SHPSampleType: String, CaseIterable, Codable {
             return .METER
         case .FLIGHTS_CLIMBED:
             return .COUNT
-        case .WATER:
-            return .LITER
         case .HEART_RATE_VARIABILITY_SDNN:
             return .MILLISECOND
         case .HEADACHE:
@@ -203,8 +373,7 @@ enum SHPSampleType: String, CaseIterable, Codable {
         case .HEIGHT:
             return .METER
         default:
-            return .NO_UNIT
-            
+            return .NO_UNIT   
         }
     }
     
