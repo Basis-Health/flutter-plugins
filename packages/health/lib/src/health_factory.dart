@@ -259,6 +259,22 @@ class HealthFactory {
     return await _parseHealthPointsFromRaw(data, threaded ?? false);
   }
 
+  Future<AnchorQuery> getDataWithAnchor({
+    required final DateTime startTime,
+    required final DateTime endTime,
+    required final HealthDataType type,
+    int? limit
+  }) async {
+    final rawResults = await _channel.invokeMethod('getDataWithAnchor', <String, dynamic>{
+      'sampleType': type.typeToString(), 
+      'startTime': startTime.millisecondsSinceEpoch,
+      'endTime': endTime.millisecondsSinceEpoch,
+      if (limit != null) 'limit': limit,
+    });
+
+    return AnchorQuery.fromData(rawResults, _platformType);
+  }
+
   Future<List<HealthDataPoint>> getBatchHealthDataFromTypes(
     final DateTime startTime,
     final DateTime endTime,
@@ -379,27 +395,9 @@ class HealthFactory {
       final dataType = message['dataType'] as HealthDataType;
       final dataPoints = message['dataPoints'] as List;
       final deduplicate = message['deduplicate'] as bool;
-      final unit = dataType.unit;
   
       Iterable<HealthDataPoint> list = dataPoints
-        .map<HealthDataPoint>((final e) {
-          // Handling different [HealthValue] types
-          return HealthDataPoint(
-            switch (dataType) {
-              HealthDataType.AUDIOGRAM => AudiogramHealthValue.fromJson(e),
-              HealthDataType.WORKOUT => WorkoutHealthValue.fromJson(e),
-              _ => NumericHealthValue(e['value']),
-            },
-            dataType,
-            unit,
-            DateTime.fromMillisecondsSinceEpoch(e['date_from']),
-            DateTime.fromMillisecondsSinceEpoch(e['date_to']),
-            _platformType,
-            e['source_id'],
-            e['source_name'],
-            e['timezone'],
-          );
-        });
+        .map<HealthDataPoint>((final e) => HealthDataPoint.fromData(e, dataType, _platformType));
 
       if (deduplicate) {
         list = list.removeDuplicates();

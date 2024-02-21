@@ -98,7 +98,13 @@ enum HealthDataType {
   /// e.g. [HealthDataType.BLOOD_GLUCOSE] -> 'BLOOD_GLUCOSE'
   String typeToString() => name;
 
-  static HealthDataType fromTypeString(String v) => _healthDataTypeReverse[v]!;
+  static HealthDataType fromTypeString(final String v) {
+    final reversed = _healthDataTypeReverse[v];
+    if (reversed == null) {
+      throw FormatException('Unknown HealthDataType: $v');
+    }
+    return reversed;
+  }
 }
 
 
@@ -546,7 +552,13 @@ enum HealthDataUnit {
   /// e.g. [HealthDataUnit.LITER] -> 'LITER'
   String typeToString() => name;
 
-  static HealthDataUnit fromTypeString(String type) => _healthDataUnitReverse[type]!;
+  static HealthDataUnit fromTypeString(final String type) {
+    final reversed = _healthDataUnitReverse[type];
+    if (reversed == null) {
+      throw FormatException('Unknown HealthDataUnit: $type');
+    }
+    return reversed;
+  }
 }
 
 /// List of [HealthWorkoutActivityType]s.
@@ -700,5 +712,11 @@ enum HealthWorkoutActivityType {
   /// e.g. [HealthWorkoutActivityType.CYCLING] -> 'CYCLING'
   String typeToString() => name;
 
-  static HealthWorkoutActivityType fromTypeString(String type) => _healthWorkoutActivityTypeReverse[type]!;
+  static HealthWorkoutActivityType fromTypeString(final String type) {
+    final reversed = _healthWorkoutActivityTypeReverse[type];
+    if (reversed == null) {
+      throw FormatException('Unknown HealthWorkoutActivityType: $type');
+    }
+    return reversed;
+  }
 }

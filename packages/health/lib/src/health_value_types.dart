@@ -7,18 +7,15 @@ part of health;
 /// Parameters:
 /// * [numericValue] - a [num] value for the [HealthDataPoint]
 class NumericHealthValue extends HealthValue {
-  num _numericValue;
+  final num numericValue;
 
-  NumericHealthValue(this._numericValue);
-
-  num get numericValue => _numericValue;
+  NumericHealthValue(this.numericValue);
 
   @override
   String toString() => numericValue.toString();
 
-  factory NumericHealthValue.fromJson(json) {
-    return NumericHealthValue(num.parse(json['numericValue']));
-  }
+  factory NumericHealthValue.fromJson(json)
+    => NumericHealthValue(num.parse(json['numericValue']));
 
   Map<String, dynamic> toJson() => {
         'numericValue': numericValue.toString(),
@@ -26,7 +23,7 @@ class NumericHealthValue extends HealthValue {
 
   @override
   bool operator ==(Object o) {
-    return o is NumericHealthValue && this._numericValue == o.numericValue;
+    return o is NumericHealthValue && this.numericValue == o.numericValue;
   }
 
   @override
@@ -93,37 +90,27 @@ class AudiogramHealthValue extends HealthValue {
 /// * [totalDistance] - the total distance of the workout
 /// * [totalDistanceUnit] - the unit of the total distance
 class WorkoutHealthValue extends HealthValue {
-  HealthWorkoutActivityType _workoutActivityType;
-  int? _totalEnergyBurned;
-  HealthDataUnit? _totalEnergyBurnedUnit;
-  int? _totalDistance;
-  HealthDataUnit? _totalDistanceUnit;
-
-  WorkoutHealthValue(
-      this._workoutActivityType,
-      this._totalEnergyBurned,
-      this._totalEnergyBurnedUnit,
-      this._totalDistance,
-      this._totalDistanceUnit);
-
   /// The type of the workout.
-  HealthWorkoutActivityType get workoutActivityType => _workoutActivityType;
-
+  final HealthWorkoutActivityType workoutActivityType;
   /// The total energy burned during the workout.
   /// Might not be available for all workouts.
-  int? get totalEnergyBurned => _totalEnergyBurned;
-
+  final int? totalEnergyBurned;
   /// The unit of the total energy burned during the workout.
   /// Might not be available for all workouts.
-  HealthDataUnit? get totalEnergyBurnedUnit => _totalEnergyBurnedUnit;
-
+  final HealthDataUnit? totalEnergyBurnedUnit;
   /// The total distance covered during the workout.
   /// Might not be available for all workouts.
-  int? get totalDistance => _totalDistance;
-
+  final int? totalDistance;
   /// The unit of the total distance covered during the workout.
   /// Might not be available for all workouts.
-  HealthDataUnit? get totalDistanceUnit => _totalDistanceUnit;
+  final HealthDataUnit? totalDistanceUnit;
+
+  WorkoutHealthValue(
+      this.workoutActivityType,
+      this.totalEnergyBurned,
+      this.totalEnergyBurnedUnit,
+      this.totalDistance,
+      this.totalDistanceUnit);
 
   factory WorkoutHealthValue.fromJson(json) {
     return WorkoutHealthValue(
@@ -144,11 +131,11 @@ class WorkoutHealthValue extends HealthValue {
 
   @override
   Map<String, dynamic> toJson() => {
-        'workoutActivityType': _workoutActivityType.typeToString(),
-        'totalEnergyBurned': _totalEnergyBurned,
-        'totalEnergyBurnedUnit': _totalEnergyBurnedUnit?.typeToString(),
-        'totalDistance': _totalDistance,
-        'totalDistanceUnit': _totalDistanceUnit?.typeToString(),
+        'workoutActivityType': workoutActivityType.typeToString(),
+        'totalEnergyBurned': totalEnergyBurned,
+        'totalEnergyBurnedUnit': totalEnergyBurnedUnit?.typeToString(),
+        'totalDistance': totalDistance,
+        'totalDistanceUnit': totalDistanceUnit?.typeToString(),
       };
 
   @override
@@ -163,11 +150,11 @@ class WorkoutHealthValue extends HealthValue {
   @override
   bool operator ==(Object o) {
     return o is WorkoutHealthValue &&
-        this.workoutActivityType == o.workoutActivityType &&
-        this.totalEnergyBurned == o.totalEnergyBurned &&
-        this.totalEnergyBurnedUnit == o.totalEnergyBurnedUnit &&
-        this.totalDistance == o.totalDistance &&
-        this.totalDistanceUnit == o.totalDistanceUnit;
+        workoutActivityType == o.workoutActivityType &&
+        totalEnergyBurned == o.totalEnergyBurned &&
+        totalEnergyBurnedUnit == o.totalEnergyBurnedUnit &&
+        totalDistance == o.totalDistance &&
+        totalDistanceUnit == o.totalDistanceUnit;
   }
 
   @override

@@ -8,6 +8,34 @@
 import Foundation
 import HealthKit
 
+class SHPAnchorQueryResult {
+    var anchor: String?
+    var sampleType: SHPSampleType
+    var newSamples: [SHPQueryResult]
+    var deletedSamples: [String]
+
+    init(
+        anchor: String?,
+        sampleType: SHPSampleType,
+        newSamples: [SHPQueryResult],
+        deletedSamples: [String]
+    ) {
+        self.anchor = anchor
+        self.sampleType = sampleType
+        self.newSamples = newSamples
+        self.deletedSamples = deletedSamples
+    }
+
+    func toData() -> NSDictionary {
+        return [
+            "anchor": anchor,
+            "sampleType": sampleType.rawValue,
+            "newSamples": newSamples.map({ $0.toData() }),
+            "deletedSamples": deletedSamples
+        ]
+    }
+}
+
 class SHPQueryResult {
     var uuid: String
     var dateFrom: Date

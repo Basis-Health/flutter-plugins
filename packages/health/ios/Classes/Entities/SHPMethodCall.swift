@@ -11,6 +11,7 @@ import HealthKit
 enum SHPMethodCall: String {
     case checkIfHealthDataAvailable
     case getBatchData
+    case getDataWithAnchor
     case getData
     case getBiologicalGender
     case getDateOfBirth

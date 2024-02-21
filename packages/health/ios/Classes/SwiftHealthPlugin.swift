@@ -20,6 +20,8 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
             checkIfHealthDataAvailable(call: call, result: result)
         case .getData:
             try! getData(call: call, result: result)
+        case .getDataWithAnchor:
+            getDataWithAnchor(call: call, result: result)
         case .getBiologicalGender:
             getBiologicalGender(call: call, result: result)
         case .getDateOfBirth:
@@ -69,7 +71,6 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
             }
         }
     }
-
 
     func hasPermissions(call: FlutterMethodCall, result: @escaping FlutterResult) throws {
         let arguments = call.arguments as? NSDictionary
@@ -183,6 +184,38 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
         ) { success in
             let data = success.map({ $0.toData() })
             DispatchQueue.main.async { result(data) }
+        }
+    }
+
+    func getDataWithAnchor(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let arguments = call.arguments as? NSDictionary,
+              let sampleTypeValue = arguments.value(forKey: "sampleType"),
+              let sampleTypeData = try? JSONSerialization.data(withJSONObject: sampleTypeValue),
+              let sampleType = try? JSONDecoder().decode(SHPSampleQuery.self, from: sampleTypeData),
+              let startTime = arguments["startTime"] as? NSNumber,
+              let endTime = arguments["endTime"] as? NSNumber,
+              let limit = arguments["limit"] as? Int,
+              let anchorString = arguments["anchor"] as? String
+        else { return }
+
+        let predicate = HKQuery.predicateForSamples(
+            withStart: Date(timeIntervalSince1970: startTime.doubleValue / 1000),
+            end: Date(timeIntervalSince1970: endTime.doubleValue / 1000),
+            options: .strictStartDate
+        )
+        let sortDescriptor = NSSortDescriptor(
+            key: HKSampleSortIdentifierEndDate,
+            ascending: false
+        )
+
+        repository.getBatchQueryUsingAnchor(
+            sampleType: sampleType,
+            limit: limit ?? HKObjectQueryNoLimit,
+            predicate: predicate,
+            sortDescriptors: [sortDescriptor],
+            anchorString: anchorString
+        ) { success in
+            DispatchQueue.main.async { result(success.toData()) }
         }
     }
     

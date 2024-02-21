@@ -10,7 +10,7 @@ import HealthKit
 
 class SHPRepository: SHPInterface {
     private let store = HKHealthStore()
-    
+
     func checkIfHealthDataAvailable() -> Bool {
         return HKHealthStore.isHealthDataAvailable()
     }
@@ -78,7 +78,6 @@ class SHPRepository: SHPInterface {
             key: HKSampleSortIdentifierEndDate,
             ascending: false
         )
-        
         if #available(iOS 15.0, *) {
             getBatchQueryUsingDescriptors(
                 sampleTypes: types.valid(),
@@ -98,6 +97,46 @@ class SHPRepository: SHPInterface {
         }
     }
 
+    //@available(iOS 15.0, *)
+    func getBatchQueryUsingAnchor(
+        sampleType: SHPSampleQuery,
+        limit: Int,
+        predicate: NSPredicate,
+        sortDescriptors: [NSSortDescriptor],
+        anchorString: String?,
+        completion: @escaping (SHPAnchorQueryResult) -> Void
+    ) {
+        // check if type is nil
+        guard let type = sampleType.type.sampleType else {
+            completion(SHPAnchorQueryResult(anchor: nil, sampleType: sampleType.type, newSamples: [], deletedSamples: []))
+            return
+        }
+
+        // Decode the anchor from the Base64 encoded string
+        let anchorData = anchorString != nil ? Data(base64Encoded: anchorString!) : nil
+        let anchor = anchorData != nil ? (try? NSKeyedUnarchiver.unarchivedObject(ofClasses: [HKQueryAnchor.self], from: anchorData!)) as? HKQueryAnchor : nil
+        
+        let anchoredQuery = HKAnchoredObjectQuery(
+            type: type ,
+            predicate: predicate,
+            anchor: anchor,
+            limit: limit
+        ) { query, newSamplesOrNil, deletedSamplesOrNil, newAnchor, error in
+            // Process the new samples and handle the new anchor
+            let newSamples = self.process(healthSamples: newSamplesOrNil ?? [], sampleUnits: [sampleType])
+            let deletedSamples = deletedSamplesOrNil?.map({ $0.uuid.uuidString }) ?? []
+            let newAnchorString = newAnchor != nil ? (try? NSKeyedArchiver.archivedData(withRootObject: newAnchor, requiringSecureCoding: true))?.base64EncodedString() : nil
+            completion(SHPAnchorQueryResult(
+                anchor: newAnchorString,
+                sampleType: sampleType.type,
+                newSamples: newSamples,
+                deletedSamples: deletedSamples
+            ))
+        }
+        
+        // Execute each query
+        store.execute(anchoredQuery)
+    }
     
     @available(iOS 15.0, *)
     private func getBatchQueryUsingDescriptors(
