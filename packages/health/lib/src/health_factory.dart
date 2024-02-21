@@ -260,16 +260,21 @@ class HealthFactory {
   }
 
   Future<AnchorQuery> getDataWithAnchor({
-    required final DateTime startTime,
-    required final DateTime endTime,
+    final DateTime? startTime,
+    final DateTime? endTime,
     required final HealthDataType type,
+    required final String? anchor,
     int? limit
   }) async {
     final rawResults = await _channel.invokeMethod('getDataWithAnchor', <String, dynamic>{
-      'sampleType': type.typeToString(), 
-      'startTime': startTime.millisecondsSinceEpoch,
-      'endTime': endTime.millisecondsSinceEpoch,
-      if (limit != null) 'limit': limit,
+      'sampleType': {
+        'type': type.typeToString(),
+        'unit': type.unit.typeToString(),
+      },
+      'startTime': startTime?.millisecondsSinceEpoch,
+      'endTime': endTime?.millisecondsSinceEpoch,
+      'limit': limit,
+      'anchor': anchor,
     });
 
     return AnchorQuery.fromData(rawResults, _platformType);

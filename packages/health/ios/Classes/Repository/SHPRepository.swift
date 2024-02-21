@@ -101,14 +101,15 @@ class SHPRepository: SHPInterface {
     func getBatchQueryUsingAnchor(
         sampleType: SHPSampleQuery,
         limit: Int,
-        predicate: NSPredicate,
+        predicate: NSPredicate?,
         sortDescriptors: [NSSortDescriptor],
         anchorString: String?,
-        completion: @escaping (SHPAnchorQueryResult) -> Void
+        completion: @escaping (SHPAnchorQueryResult, Error?) -> Void
     ) {
         // check if type is nil
+        let emptyResult = SHPAnchorQueryResult(anchor: nil, sampleType: sampleType.type, newSamples: [], deletedSamples: [])
         guard let type = sampleType.type.sampleType else {
-            completion(SHPAnchorQueryResult(anchor: nil, sampleType: sampleType.type, newSamples: [], deletedSamples: []))
+            completion(emptyResult, nil)
             return
         }
 
@@ -122,6 +123,10 @@ class SHPRepository: SHPInterface {
             anchor: anchor,
             limit: limit
         ) { query, newSamplesOrNil, deletedSamplesOrNil, newAnchor, error in
+            if let error = error {
+                completion(emptyResult, error)
+            }
+
             // Process the new samples and handle the new anchor
             let newSamples = self.process(healthSamples: newSamplesOrNil ?? [], sampleUnits: [sampleType])
             let deletedSamples = deletedSamplesOrNil?.map({ $0.uuid.uuidString }) ?? []
@@ -131,7 +136,7 @@ class SHPRepository: SHPInterface {
                 sampleType: sampleType.type,
                 newSamples: newSamples,
                 deletedSamples: deletedSamples
-            ))
+            ), nil)
         }
         
         // Execute each query

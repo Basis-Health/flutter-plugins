@@ -22,7 +22,7 @@ class AnchorQuery extends HealthValue {
     required this.deletedSamples,
   });
 
-  factory AnchorQuery.fromData(json, PlatformType platformType) {
+  factory AnchorQuery.fromData(final json, final PlatformType platformType) {
     final sampleType = HealthDataType.fromTypeString(json['sampleType']);
     return AnchorQuery(
       anchor: json['anchor'],
@@ -42,6 +42,7 @@ class AnchorQuery extends HealthValue {
         'deletedSamples': deletedSamples,
       };
 }
+
 class HealthDataQuery extends HealthValue {
   final HealthDataType type;
   final HealthDataUnit? unit;

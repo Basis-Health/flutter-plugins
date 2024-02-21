@@ -31,10 +31,10 @@ protocol SHPInterface {
     func getBatchQueryUsingAnchor(
         sampleType: SHPSampleQuery,
         limit: Int,
-        predicate: NSPredicate,
+        predicate: NSPredicate?,
         sortDescriptors: [NSSortDescriptor],
         anchorString: String?,
-        completion: @escaping (SHPAnchorQueryResult) -> Void
+        completion: @escaping (SHPAnchorQueryResult, Error?) -> Void
     )
     
     func getDevices(completion: @escaping ([SHPDevice]) -> Void)

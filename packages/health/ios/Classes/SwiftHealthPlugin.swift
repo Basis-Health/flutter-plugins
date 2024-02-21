@@ -3,9 +3,18 @@
 import UIKit
 import HealthKit
 
+struct PluginError: Error { let message: String }
+
+// Extend PluginError to conform to LocalizedError
+extension PluginError: LocalizedError {
+    // Provide a custom error description
+    var errorDescription: String? {
+        return message
+    }
+}
+
 public class SwiftHealthPlugin: NSObject, FlutterPlugin {
     let repository = SHPRepository()
-    struct PluginError: Error { let message: String }
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "flutter_health", binaryMessenger: registrar.messenger())
@@ -14,36 +23,41 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        let method = SHPMethodCall(rawValue: call.method)
-        switch method {
-        case .checkIfHealthDataAvailable:
-            checkIfHealthDataAvailable(call: call, result: result)
-        case .getData:
-            try! getData(call: call, result: result)
-        case .getDataWithAnchor:
-            getDataWithAnchor(call: call, result: result)
-        case .getBiologicalGender:
-            getBiologicalGender(call: call, result: result)
-        case .getDateOfBirth:
-            getDateOfBirth(call: call, result: result)
-        case .getBatchData:
-            try! getBatchData(call: call, result: result)
-        case .getDevices:
-            getDevices(call: call, result: result)
-        case .requestAuthorization:
-            try! requestAuthorization(call: call, result: result)
-        case .getTotalStepsInInterval:
-            getTotalStepsInInterval(call: call, result: result)
-        case .writeData:
-            try! writeData(call: call, result: result)
-        case .writeAudiogram:
-            try! writeAudiogram(call: call, result: result)
-        case .writeWorkoutData:
-            try! writeWorkoutData(call: call, result: result)
-        case .hasPermissions:
-            try! hasPermissions(call: call, result: result)
-        default:
-            print("Method not supported")
+        do {
+            let method = SHPMethodCall(rawValue: call.method)
+            switch method {
+            case .checkIfHealthDataAvailable:
+                checkIfHealthDataAvailable(call: call, result: result)
+            case .getData:
+                try getData(call: call, result: result)
+            case .getDataWithAnchor:
+                try getDataWithAnchor(call: call, result: result)
+            case .getBiologicalGender:
+                getBiologicalGender(call: call, result: result)
+            case .getDateOfBirth:
+                getDateOfBirth(call: call, result: result)
+            case .getBatchData:
+                try getBatchData(call: call, result: result)
+            case .getDevices:
+                getDevices(call: call, result: result)
+            case .requestAuthorization:
+                try requestAuthorization(call: call, result: result)
+            case .getTotalStepsInInterval:
+                getTotalStepsInInterval(call: call, result: result)
+            case .writeData:
+                try writeData(call: call, result: result)
+            case .writeAudiogram:
+                try writeAudiogram(call: call, result: result)
+            case .writeWorkoutData:
+                try writeWorkoutData(call: call, result: result)
+            case .hasPermissions:
+                try hasPermissions(call: call, result: result)
+            default:
+                result(FlutterError(code: "not_implemented", message: "Method not implemented", details: nil))
+            }
+        } catch {
+            result(FlutterError(code: "error", message: "Error: \(error.localizedDescription)", details: nil))
+        
         }
     }
     
@@ -78,6 +92,7 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
               let permissions = arguments?["permissions"] as? Array<Int>,
               typeStrings.count == permissions.count
         else { throw PluginError(message: "Invalid Arguments!") }
+
         let types = typeStrings.compactMap({ SHPSampleType(rawValue: $0) })
         result(repository.hasPermissions(types: types, permissions: permissions))
     }
@@ -89,7 +104,7 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
               let permissions = arguments["permissions"] as? Array<Int>,
               permissions.count == typeStrings.count
         else { throw PluginError(message: "Invalid Arguments!") }
-        
+
         let types = typeStrings.compactMap({ SHPSampleType(rawValue: $0) })
         let objectTypes = objectTypeStrings.compactMap({ SHPObjectType(rawValue: $0) })
         repository.requestAuthorization(types: types, objectTypes: objectTypes, permissions: permissions) { success in
@@ -108,6 +123,7 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
               let startTime = (arguments["startTime"] as? NSNumber),
               let endTime = (arguments["endTime"] as? NSNumber)
         else { throw PluginError(message: "Invalid Arguments") }
+
         repository.writeData(
             value: value,
             type: type,
@@ -187,22 +203,47 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    func getDataWithAnchor(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let arguments = call.arguments as? NSDictionary,
-              let sampleTypeValue = arguments.value(forKey: "sampleType"),
-              let sampleTypeData = try? JSONSerialization.data(withJSONObject: sampleTypeValue),
-              let sampleType = try? JSONDecoder().decode(SHPSampleQuery.self, from: sampleTypeData),
-              let startTime = arguments["startTime"] as? NSNumber,
-              let endTime = arguments["endTime"] as? NSNumber,
-              let limit = arguments["limit"] as? Int,
-              let anchorString = arguments["anchor"] as? String
-        else { return }
+    func createPredicate(startTime: NSNumber?, endTime: NSNumber?) -> NSPredicate? {
+        if let start = startTime, let end = endTime {
+            // Both start and end times are provided
+            return HKQuery.predicateForSamples(
+                withStart: Date(timeIntervalSince1970: start.doubleValue / 1000),
+                end: Date(timeIntervalSince1970: end.doubleValue / 1000),
+                options: .strictStartDate)
+        } else if let start = startTime {
+            // Only start time is provided
+            return HKQuery.predicateForSamples(
+                withStart: Date(timeIntervalSince1970: start.doubleValue / 1000),
+                end: nil,
+                options: .strictStartDate)
+        } else if let end = endTime {
+            // Only end time is provided
+            return HKQuery.predicateForSamples(
+                withStart: nil,
+                end: Date(timeIntervalSince1970: end.doubleValue / 1000),
+                options: .strictStartDate)
+        } else {
+            // Neither start nor end time is provided, could fetch all samples
+            // Note: Depending on your use case, you might not want to set a predicate at all if fetching all samples
+            return nil // Or some default predicate depending on your specific requirements
+        }
+    }
 
-        let predicate = HKQuery.predicateForSamples(
-            withStart: Date(timeIntervalSince1970: startTime.doubleValue / 1000),
-            end: Date(timeIntervalSince1970: endTime.doubleValue / 1000),
-            options: .strictStartDate
-        )
+    func getDataWithAnchor(call: FlutterMethodCall, result: @escaping FlutterResult) throws {
+        guard let arguments = call.arguments as? NSDictionary else { throw PluginError(message: "Invalid Arguments: not a dictionary")}
+
+        // Since sampleType seems to be required, no change needed here.
+        guard let sampleTypeValue = arguments.value(forKey: "sampleType") else { throw PluginError(message: "Invalid Arguments: sampleType not found")}
+        guard let sampleTypeData = try? JSONSerialization.data(withJSONObject: sampleTypeValue) else { throw PluginError(message: "Invalid Arguments: sampleType not found")}
+        guard let sampleType = try? JSONDecoder().decode(SHPSampleQuery.self, from: sampleTypeData) else { throw PluginError(message: "Invalid Arguments: sampleType not found")}
+
+        // Allowing nil for startTime, endTime, limit, and anchorString
+        let startTime = arguments["startTime"] as? NSNumber
+        let endTime = arguments["endTime"] as? NSNumber
+        let limit = arguments["limit"] as? Int
+        let anchorString = arguments["anchor"] as? String
+
+        let predicate = createPredicate(startTime: startTime, endTime: endTime)
         let sortDescriptor = NSSortDescriptor(
             key: HKSampleSortIdentifierEndDate,
             ascending: false
@@ -214,8 +255,12 @@ public class SwiftHealthPlugin: NSObject, FlutterPlugin {
             predicate: predicate,
             sortDescriptors: [sortDescriptor],
             anchorString: anchorString
-        ) { success in
-            DispatchQueue.main.async { result(success.toData()) }
+        ) { success, error in
+            if let error = error {
+                DispatchQueue.main.async { result(FlutterError(code: "error", message: error.localizedDescription, details: nil)) }
+            } else {
+                DispatchQueue.main.async { result(success.toData()) }
+            }
         }
     }
     
