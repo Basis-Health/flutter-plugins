@@ -109,7 +109,7 @@ class SHPRepository: SHPInterface {
         // check if type is nil
         let emptyResult = SHPAnchorQueryResult(anchor: nil, sampleType: sampleType.type, newSamples: [], deletedSamples: [])
         guard let type = sampleType.type.sampleType else {
-            completion(emptyResult, nil)
+            completion(emptyResult, nil) // return empty result
             return
         }
 
@@ -124,19 +124,19 @@ class SHPRepository: SHPInterface {
             limit: limit
         ) { query, newSamplesOrNil, deletedSamplesOrNil, newAnchor, error in
             if let error = error {
-                completion(emptyResult, error)
+                completion(emptyResult, error) // return empty result with error
+            } else {
+                // Process the new samples and handle the new anchor
+                let newSamples = self.process(healthSamples: newSamplesOrNil ?? [], sampleUnits: [sampleType])
+                let deletedSamples = deletedSamplesOrNil?.map({ $0.uuid.uuidString }) ?? []
+                let newAnchorString = newAnchor != nil ? (try? NSKeyedArchiver.archivedData(withRootObject: newAnchor, requiringSecureCoding: true))?.base64EncodedString() : nil
+                completion(SHPAnchorQueryResult(
+                    anchor: newAnchorString,
+                    sampleType: sampleType.type,
+                    newSamples: newSamples,
+                    deletedSamples: deletedSamples
+                ), nil)
             }
-
-            // Process the new samples and handle the new anchor
-            let newSamples = self.process(healthSamples: newSamplesOrNil ?? [], sampleUnits: [sampleType])
-            let deletedSamples = deletedSamplesOrNil?.map({ $0.uuid.uuidString }) ?? []
-            let newAnchorString = newAnchor != nil ? (try? NSKeyedArchiver.archivedData(withRootObject: newAnchor, requiringSecureCoding: true))?.base64EncodedString() : nil
-            completion(SHPAnchorQueryResult(
-                anchor: newAnchorString,
-                sampleType: sampleType.type,
-                newSamples: newSamples,
-                deletedSamples: deletedSamples
-            ), nil)
         }
         
         // Execute each query
