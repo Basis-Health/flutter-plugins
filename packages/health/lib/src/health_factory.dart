@@ -24,6 +24,8 @@ class HealthFactory {
   static PlatformType _platformType =
       Platform.isAndroid ? PlatformType.ANDROID : PlatformType.IOS;
 
+  const HealthFactory();
+
   /// Check if a given data type is available on the platform
   bool isDataTypeAvailable(final HealthDataType dataType) {
     if (Platform.isAndroid) return dataTypeKeysAndroid.contains(dataType);

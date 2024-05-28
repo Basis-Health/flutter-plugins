@@ -15,14 +15,14 @@ class AnchorQuery extends HealthValue {
   /// UUID of the deleted data point
   final List<String> deletedSamples;
 
-  AnchorQuery({
+  const AnchorQuery({
     required this.anchor,
     required this.type,
     required this.newSamples,
     required this.deletedSamples,
   });
 
-  factory AnchorQuery.fromData(final json, final PlatformType platformType) {
+  factory AnchorQuery.fromData(final dynamic json, final PlatformType platformType) {
     final sampleType = HealthDataType.fromTypeString(json['sampleType']);
     return AnchorQuery(
       anchor: json['anchor'],
@@ -47,7 +47,7 @@ class HealthDataQuery extends HealthValue {
   final HealthDataType type;
   final HealthDataUnit? unit;
 
-  HealthDataQuery({required this.type, this.unit});
+  const HealthDataQuery({required this.type, this.unit});
 
   @override
   Map<String, dynamic> toJson() => {

@@ -14,7 +14,7 @@ class HealthDataPoint extends HealthValue {
   final String sourceName;
   final String? timezone;
 
-  HealthDataPoint(
+  const HealthDataPoint(
     this.uuid,
     this.value,
     this.type,
@@ -27,7 +27,7 @@ class HealthDataPoint extends HealthValue {
     this.timezone,
   );
 
-  factory HealthDataPoint.fromData(final json, final HealthDataType dataType, final PlatformType _platformType) {
+  factory HealthDataPoint.fromData(final dynamic json, final HealthDataType dataType, final PlatformType _platformType) {
      // Handling different [HealthValue] types
     return HealthDataPoint(
       json['uuid'],
@@ -48,7 +48,7 @@ class HealthDataPoint extends HealthValue {
   }
 
   /// Converts a json object to the [HealthDataPoint]
-  factory HealthDataPoint.fromJson(final json) {
+  factory HealthDataPoint.fromJson(final dynamic json) {
     final dataType = HealthDataType.fromTypeString(json['data_type']);
     return HealthDataPoint(
       json['uuid'],

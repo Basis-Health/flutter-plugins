@@ -255,7 +255,6 @@ const Set<HealthDataType> dataTypeKeysAndroid = {
   HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
   HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
   HealthDataType.BODY_FAT_PERCENTAGE,
-  HealthDataType.BODY_MASS_INDEX,
   HealthDataType.BODY_TEMPERATURE,
   HealthDataType.HEART_RATE,
   HealthDataType.HEIGHT,
@@ -267,6 +266,7 @@ const Set<HealthDataType> dataTypeKeysAndroid = {
   HealthDataType.DIETARY_WATER, // TODO update key in Android
   HealthDataType.WORKOUT,
 };
+
 late final dataTypeKeysAndroidList = dataTypeKeysAndroid.toList(growable: false);
 
 const Set<HealthWorkoutActivityType> activityTypesiOS = const {

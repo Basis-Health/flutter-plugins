@@ -9,7 +9,7 @@ part of health;
 class NumericHealthValue extends HealthValue {
   final num numericValue;
 
-  NumericHealthValue(this.numericValue);
+  const NumericHealthValue(this.numericValue);
 
   @override
   String toString() => numericValue.toString();
@@ -37,11 +37,11 @@ class NumericHealthValue extends HealthValue {
 /// * [leftEarSensitivities] threshold in decibel for the left ear
 /// * [rightEarSensitivities] threshold in decibel for the left ear
 class AudiogramHealthValue extends HealthValue {
-  List<num> _frequencies;
-  List<num> _leftEarSensitivities;
-  List<num> _rightEarSensitivities;
+  final List<num> _frequencies;
+  final List<num> _leftEarSensitivities;
+  final List<num> _rightEarSensitivities;
 
-  AudiogramHealthValue(this._frequencies, this._leftEarSensitivities,
+  const AudiogramHealthValue(this._frequencies, this._leftEarSensitivities,
       this._rightEarSensitivities);
 
   List<num> get frequencies => _frequencies;
@@ -162,6 +162,9 @@ class WorkoutHealthValue extends HealthValue {
       totalEnergyBurnedUnit, totalDistance, totalDistanceUnit);
 }
 
+@immutable
 abstract class HealthValue {
+  const HealthValue();
+
   Map<String, dynamic> toJson();
 }
