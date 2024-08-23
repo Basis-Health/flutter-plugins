@@ -1,8 +1,10 @@
 part of motion_sleep;
 
 class MotionSleep implements MotionSleepInterface {
-  static var instance = MotionSleep();
-  static const MethodChannel _channel = MethodChannel('motion_sleep');
+  static final logger = Logger('MotionSleep');
+
+  static final instance = MotionSleep();
+  static const _channel = MethodChannel('motion_sleep');
 
   @override
   Future<MotionAuthorizationStatus> fetchAuthorizationStatus() {
@@ -15,23 +17,26 @@ class MotionSleep implements MotionSleepInterface {
   Future<List<MotionActivity>> fetchActivities({
     required DateTime start,
     required DateTime end,
+    bool efficient = false
   }) async {
     var response = await _channel.invokeMethod(
       MotionSleepMethod.fetchActivities.name,
       {
         'start': start.millisecondsSinceEpoch,
         'end': end.millisecondsSinceEpoch,
+        'efficient': efficient,
       },
     );
     try {
-      response = jsonDecode(jsonEncode(response));
       final activities = (response as List)
-          .map((e) => MotionActivity.fromJson(e as Map<String, dynamic>))
-          .toList();
+          .map(efficient ?
+            (e) => MotionActivity.fromEfficientJson((e as Map).cast<String, dynamic>()) :
+            (e) => MotionActivity.fromJson((e as Map).cast<String, dynamic>()))
+          .toList(growable: false);
       return activities;
-    } catch (e) {
-      _log('$e while parsing response $response');
-      return [];
+    } catch (e, t) {
+      logger.severe('error while parsing response $response', e, t);
+      return const [];
     }
   }
 
@@ -52,8 +57,8 @@ class MotionSleep implements MotionSleepInterface {
     try {
       response = jsonDecode(jsonEncode(response));
       return SleepSession.fromJson(response as Map<String, dynamic>);
-    } catch (e) {
-      _log(e.toString());
+    } catch (e, t) {
+      logger.severe('error while parsing response $response', e, t);
       return null;
     }
   }
@@ -77,11 +82,11 @@ class MotionSleep implements MotionSleepInterface {
       response = jsonDecode(jsonEncode(response));
       final sessions = (response as List)
           .map((e) => SleepSession.fromJson(e as Map<String, dynamic>))
-          .toList();
+          .toList(growable: false);
       return sessions;
-    } catch (e) {
-      _log('$e while parsing response $response');
-      return [];
+    } catch (e, t) {
+      logger.severe('error while parsing response $response', e, t);
+      return const [];
     }
   }
 
@@ -94,6 +99,4 @@ class MotionSleep implements MotionSleepInterface {
   Future<void> requestAuthorization() async => await _channel.invokeMethod(
         MotionSleepMethod.requestAuthorization.name,
       );
-
-  _log(String message) => log(message, name: runtimeType.toString());
 }

@@ -454,12 +454,6 @@ const Set<HealthWorkoutActivityType> activityTypesAndroid = const {
   HealthWorkoutActivityType.OTHER,
 };
 
-const PlatformTypeJsonValue = {
-  PlatformType.IOS: 'ios', PlatformType.ANDROID: 'android',
-};
-const platformTypeJsonValueReverse = {
-  'ios': PlatformType.IOS, 'android': PlatformType.ANDROID,
-};
 
 /// List of all [HealthDataUnit]s.
 enum HealthDataUnit {

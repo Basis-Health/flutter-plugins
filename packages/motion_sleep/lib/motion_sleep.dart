@@ -1,9 +1,10 @@
 library motion_sleep;
 
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:flutter/services.dart';
+import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 
 part 'src/entities/motion_sleep_method.dart';
 part 'src/entities/motion_activity.dart';
