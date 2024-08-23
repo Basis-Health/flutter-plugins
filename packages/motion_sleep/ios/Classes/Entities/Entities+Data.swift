@@ -67,6 +67,8 @@ extension SleepSession {
 
 extension Array where Element == MotionActivity {
     func toData() -> [NSDictionary] { map({ $0.toData() }) }
+
+    func toEfficientData() -> [NSDictionary] { map({ $0.toEfficientData() }) }
 }
 
 extension Array where Element == SleepSession {
