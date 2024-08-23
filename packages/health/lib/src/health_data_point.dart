@@ -9,7 +9,6 @@ class HealthDataPoint extends HealthValue {
   final HealthDataUnit unit;
   final DateTime dateFrom;
   final DateTime dateTo;
-  final PlatformType platform;
   final String sourceId;
   final String sourceName;
   final String? timezone;
@@ -21,13 +20,12 @@ class HealthDataPoint extends HealthValue {
     this.unit,
     this.dateFrom,
     this.dateTo,
-    this.platform,
     this.sourceId,
     this.sourceName,
     this.timezone,
   );
 
-  factory HealthDataPoint.fromData(final dynamic json, final HealthDataType dataType, final PlatformType _platformType) {
+  factory HealthDataPoint.fromData(final dynamic json, final HealthDataType dataType) {
      // Handling different [HealthValue] types
     return HealthDataPoint(
       json['uuid'],
@@ -40,7 +38,6 @@ class HealthDataPoint extends HealthValue {
       dataType.unit,
       DateTime.fromMillisecondsSinceEpoch(json['date_from']),
       DateTime.fromMillisecondsSinceEpoch(json['date_to']),
-      _platformType,
       json['source_id'],
       json['source_name'],
       json['timezone'],
@@ -61,7 +58,6 @@ class HealthDataPoint extends HealthValue {
       HealthDataUnit.fromTypeString(json['unit']),
       DateTime.parse(json['date_from']).toLocal(),
       DateTime.parse(json['date_to']).toLocal(),
-      platformTypeJsonValueReverse[json['platform_type']]!,
       json['source_id'],
       json['source_name'],
       json['timezone'],
@@ -77,7 +73,6 @@ class HealthDataPoint extends HealthValue {
         'unit': unit.typeToString(),
         'date_from': dateFrom.toUtc().toIso8601String(),
         'date_to': dateTo.toUtc().toIso8601String(),
-        'platform_type': PlatformTypeJsonValue[platform],
         'source_id': sourceId,
         'source_name': sourceName,
         'timezone': timezone,
@@ -99,7 +94,6 @@ class HealthDataPoint extends HealthValue {
         dateFrom == o.dateFrom &&
         dateTo == o.dateTo &&
         type == o.type &&
-        platform == o.platform &&
         sourceId == o.sourceId &&
         sourceName == o.sourceName &&
         timezone == o.timezone;

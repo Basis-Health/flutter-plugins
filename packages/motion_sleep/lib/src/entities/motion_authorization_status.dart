@@ -7,8 +7,9 @@ enum MotionAuthorizationStatus {
     denied;
 
     static MotionAuthorizationStatus fromString(String value) {
+      final lowerCaseValue = value.toLowerCase();
       return MotionAuthorizationStatus.values.firstWhere(
-            (e) => e.name.toLowerCase() == value.toLowerCase(),
+            (e) => e.name.toLowerCase() == lowerCaseValue,
             orElse: () => MotionAuthorizationStatus.notDetermined,
       );
     }

@@ -22,13 +22,13 @@ class AnchorQuery extends HealthValue {
     required this.deletedSamples,
   });
 
-  factory AnchorQuery.fromData(final dynamic json, final PlatformType platformType) {
+  factory AnchorQuery.fromData(final dynamic json) {
     final sampleType = HealthDataType.fromTypeString(json['sampleType']);
     return AnchorQuery(
       anchor: json['anchor'],
       type: sampleType,
       newSamples: (json['newSamples'] as List)
-          .map((e) => HealthDataPoint.fromData(e, sampleType, platformType))
+          .map((e) => HealthDataPoint.fromData(e, sampleType))
           .toList(growable: false),
       deletedSamples: (json['deletedSamples'] as List).cast<String>(),
     );

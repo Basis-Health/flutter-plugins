@@ -21,22 +21,26 @@ extension RemoveDuplicates on Iterable<HealthDataPoint> {
 class HealthFactory {
   static const MethodChannel _channel = MethodChannel('flutter_health');
 
-  static PlatformType _platformType =
-      Platform.isAndroid ? PlatformType.ANDROID : PlatformType.IOS;
-
   const HealthFactory();
 
   /// Check if a given data type is available on the platform
   bool isDataTypeAvailable(final HealthDataType dataType) {
     if (Platform.isAndroid) return dataTypeKeysAndroid.contains(dataType);
     if (Platform.isIOS) return dataTypeKeysIOS.contains(dataType);
-    throw UnimplementedError('Unsupported platform ${Platform.operatingSystem}');
+    return false;
+  }
+
+  /// Check if the given [HealthWorkoutActivityType] is supported on the iOS platform
+  bool isWorkoutTypeAvailable(final HealthWorkoutActivityType type) {
+    if (Platform.isAndroid) return activityTypesAndroid.contains(type);
+    if (Platform.isIOS) activityTypesiOS.contains(type);
+    return false;
   }
 
   List<HealthDataType> getAvailableDataTypes() {
     if (Platform.isAndroid) return dataTypeKeysAndroidList;
     if (Platform.isIOS) return dataTypeKeysIOSList;
-    throw UnimplementedError('Unsupported platform ${Platform.operatingSystem}');
+    return const [];
   }
 
   /// Determines if the data types have been granted with the specified access rights.
@@ -234,7 +238,7 @@ class HealthFactory {
     if (startTime.isAfter(endTime)) {
       throw ArgumentError('startTime must be equal or earlier than endTime');
     }
-    if (_platformType == PlatformType.ANDROID) {
+    if (Platform.isAndroid) {
       throw UnsupportedError('writeAudiogram is not supported on Android');
     }
     bool? success = await _channel.invokeMethod('writeAudiogram', {
@@ -279,7 +283,7 @@ class HealthFactory {
       'anchor': anchor,
     });
 
-    return AnchorQuery.fromData(rawResults, _platformType);
+    return AnchorQuery.fromData(rawResults);
   }
 
   Future<List<HealthDataPoint>> getBatchHealthDataFromTypes(
@@ -290,13 +294,22 @@ class HealthFactory {
     final bool? threaded,
     final int? limit,
   }) async {
-    final result = await _batchDataQuery(startTime, endTime, types, deduplicates, threaded, limit);
-    return await _parseHealthPointsFromRaw(result, threaded);
+    // batch queries are only supported on IOS yet.
+    if (Platform.isIOS) {
+      final result = await _batchDataQuery(startTime, endTime, types, deduplicates, threaded, limit);
+      return await _parseHealthPointsFromRaw(result, threaded);
+    }
+
+    return getHealthDataFromTypes(startTime, endTime, types, deduplicates: deduplicates, threaded: threaded);
   }
 
   Future<List<HealthDevice>> getDevices() async {
-    final devices = await _channel.invokeMethod('getDevices');
-    return (devices as List).map((e) => HealthDevice.fromMap(e)).toList();
+    if (Platform.isIOS) {
+      final devices = await _channel.invokeMethod('getDevices');
+      return (devices as List).map((e) => HealthDevice.fromMap(e)).toList();
+    }
+
+    throw UnsupportedError('getDevices is only supported on iOS');
   }
 
   /// Prepares a query, i.e. checks if the types are available, etc.
@@ -317,7 +330,7 @@ class HealthFactory {
     // If not implemented on platform, throw an exception
     for (var type in dataType) {
       if (!isDataTypeAvailable(type)) {
-        throw HealthException(dataType, 'Not available on platform $_platformType');
+        throw HealthException(dataType, 'Not available on platform ${Platform.operatingSystem}');
       }
     }
   }
@@ -359,6 +372,10 @@ class HealthFactory {
     final bool? threaded,
     final int? limit,
   ) async {
+    if (!Platform.isIOS) {
+      throw UnsupportedError('Batch data query is only supported on iOS');
+    }
+
     final rawResults = await _channel.invokeMethod('getBatchData', <String, dynamic>{
       'dataTypes': queries.map((e) => {
         'type': e.typeToString(),
@@ -404,7 +421,7 @@ class HealthFactory {
       final deduplicate = message['deduplicate'] as bool;
   
       Iterable<HealthDataPoint> list = dataPoints
-        .map<HealthDataPoint>((final e) => HealthDataPoint.fromData(e, dataType, _platformType));
+        .map<HealthDataPoint>((final e) => HealthDataPoint.fromData(e, dataType));
 
       if (deduplicate) {
         list = list.removeDuplicates();
@@ -433,8 +450,8 @@ class HealthFactory {
     final stepsCount = await _channel.invokeMethod<int?>(
       'getTotalStepsInInterval',
       <String, dynamic>{
-      'startTime': startTime.millisecondsSinceEpoch,
-      'endTime': endTime.millisecondsSinceEpoch
+        'startTime': startTime.millisecondsSinceEpoch,
+        'endTime': endTime.millisecondsSinceEpoch
       },
     );
     return stepsCount;
@@ -445,6 +462,7 @@ class HealthFactory {
       final dob = await _channel.invokeMethod<String?>('getDateOfBirth');
       return dob == null ? null : DateTime.parse(dob).toLocal();
     } else {
+      // TODO android
       return null;
     }
   }
@@ -454,6 +472,7 @@ class HealthFactory {
       final gender = await _channel.invokeMethod<String?>('getBiologicalGender');
       return DeviceGender.values.firstWhere((e) => e.appleValue == gender, orElse: () => DeviceGender.unknown);
     } else {
+      // TODO android
       return null;
     }
   }
@@ -480,11 +499,10 @@ class HealthFactory {
     final HealthDataUnit totalDistanceUnit = HealthDataUnit.METER,
   }) async {
     // Check that value is on the current Platform
-    if (_platformType == PlatformType.IOS && !_isOnIOS(activityType)) {
-      throw HealthException(activityType, 'Workout activity type $activityType is not supported on iOS');
-    } else if (!_isOnAndroid(activityType)) {
-      throw HealthException(activityType, 'Workout activity type $activityType is not supported on Android');
+    if (!isWorkoutTypeAvailable(activityType)) {
+      throw HealthException(activityType, 'Workout activity type $activityType is not supported on ${Platform.operatingSystem}');
     }
+
     final success = await _channel.invokeMethod('writeWorkoutData', <String, dynamic>{
       'activityType': activityType.typeToString(),
       'startTime': start.millisecondsSinceEpoch,
@@ -495,17 +513,5 @@ class HealthFactory {
       'totalDistanceUnit': totalDistanceUnit.name,
     });
     return success ?? false;
-  }
-
-  /// Check if the given [HealthWorkoutActivityType] is supported on the iOS platform
-  bool _isOnIOS(final HealthWorkoutActivityType type) {
-    // Returns true if the type is part of the iOS set
-    return activityTypesiOS.contains(type);
-  }
-
-  /// Check if the given [HealthWorkoutActivityType] is supported on the Android platform
-  bool _isOnAndroid(final HealthWorkoutActivityType type) {
-    // Returns true if the type is part of the Android set
-    return activityTypesAndroid.contains(type);
   }
 }

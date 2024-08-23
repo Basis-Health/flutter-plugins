@@ -33,7 +33,8 @@ public class MotionSleepPlugin: NSObject, FlutterPlugin {
     func fetchActivities(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let arguments = call.arguments as? NSDictionary,
               let startDate = arguments["start"] as? Int,
-              let endDate = arguments["end"] as? Int
+              let endDate = arguments["end"] as? Int,
+              let efficient = arguments["efficient"] as? Bool
         else { result("Invalid Arguments"); return }
         
         let start = Date(timeIntervalSince1970: Double(startDate) / 1000)
@@ -41,7 +42,7 @@ public class MotionSleepPlugin: NSObject, FlutterPlugin {
         manager.fetchActivities(start: start, end: end) { motionResult in
             DispatchQueue.main.async {
                 switch motionResult {
-                case .success(let activities): result(activities.toData())
+                case .success(let activities): result(efficient ? activities.toEfficientData() : activities.toData())
                 case .failure(let error): result(error.localizedDescription)
                 }
             }
