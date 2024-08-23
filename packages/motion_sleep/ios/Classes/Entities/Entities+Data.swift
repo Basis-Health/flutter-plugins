@@ -10,8 +10,8 @@ import Foundation
 extension MotionActivity {
     func toData() -> NSDictionary {
         return [
-            "startDate": Int(startDate.millisecondsSince1970),
-            "endDate": Int(endDate.millisecondsSince1970),
+            "startDate": Int(startDate.timeIntervalSince1970 * 1000),
+            "endDate": Int(endDate.timeIntervalSince1970 * 1000),
             "stationary": stationary,
             "walking": walking,
             "running": running,
@@ -41,8 +41,8 @@ extension MotionActivity {
     */
     func toEfficientData() -> NSDictionary {
         return [
-            "s": Int(startDate.timeIntervalSince1970),
-            "e": Int(endDate.timeIntervalSince1970),
+            "s": Int(startDate.timeIntervalSince1970 * 1000),
+            "e": Int(endDate.timeIntervalSince1970 * 1000),
             "d": (stationary ? 1 : 0) |
                 (walking ? 2 : 0) |
                 (running ? 4 : 0) |
