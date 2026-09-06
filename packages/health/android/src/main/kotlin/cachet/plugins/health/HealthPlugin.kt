@@ -27,7 +27,6 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.ActivityResultListener
-import io.flutter.plugin.common.PluginRegistry.Registrar
 import java.security.Permission
 import java.util.*
 import java.util.concurrent.*
@@ -184,25 +183,10 @@ class HealthPlugin(private var channel: MethodChannel? = null) : MethodCallHandl
     threadPoolExecutor = null
   }
 
-  // This static function is optional and equivalent to onAttachedToEngine. It supports the old
-  // pre-Flutter-1.12 Android projects. You are encouraged to continue supporting
-  // plugin registration via this function while apps migrate to use the new Android APIs
-  // post-flutter-1.12 via https://flutter.dev/go/android-project-migration.
-  //
-  // It is encouraged to share logic between onAttachedToEngine and registerWith to keep
-  // them functionally equivalent. Only one of onAttachedToEngine or registerWith will be called
-  // depending on the user's project. onAttachedToEngine or registerWith must both be defined
-  // in the same class.
-  companion object {
-    @Suppress("unused")
-    @JvmStatic
-    fun registerWith(registrar: Registrar) {
-      val channel = MethodChannel(registrar.messenger(), CHANNEL_NAME)
-      val plugin = HealthPlugin(channel)
-      registrar.addActivityResultListener(plugin)
-      channel.setMethodCallHandler(plugin)
-    }
-  }
+  // v1-embedding `registerWith(Registrar)` removed (2026-09): the Registrar
+  // API no longer exists in modern Flutter, so the legacy companion failed to
+  // compile. v2 embedding (onAttachedToEngine/ActivityAware above) is the
+  // sole registration path.
 
   /// DataTypes to register
   // private val fitnessOptions = FitnessOptions.builder()
